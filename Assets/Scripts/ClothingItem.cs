@@ -11,8 +11,8 @@ public class ClothingItem : MonoBehaviour
         MeshRenderer renderer = GetComponent<MeshRenderer>();
         if (renderer != null)
         {
-            // Создаем новый материал, чтобы не менять общий ассет материала
-            renderer.material = new Material(renderer.material) { color = data.itemColor };
+           
+            renderer.material.color =  data.itemColor ;
         }
     }
 }
