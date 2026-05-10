@@ -240,4 +240,8 @@ public class CucumberRitualController : MonoBehaviour, IRitualController
     {
         if (anxietyCounterText != null) anxietyCounterText.text = $"Тревожность: {currentAnxiety:F2}";
     }
+    public void AbortRitual()
+    {
+        EndRitual(); // Пока просто завершаем ритуал
+    }
 }

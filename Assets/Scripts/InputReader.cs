@@ -26,6 +26,7 @@ public class InputReader : MonoBehaviour
 
 
     public Vector2 RitualPointValue { get; private set; }
+    public bool IsRitualClickHeld { get; private set; }
 
     public System.Action OnJumpPerformed;
     public System.Action OnPausePerformed;
@@ -52,6 +53,9 @@ public class InputReader : MonoBehaviour
 
         _unpauseAction.action.performed += ctx => OnUnpausePerformed?.Invoke();
         _ritualClickAction.action.performed += ctx => OnRitualClickPerformed?.Invoke();
+
+        _ritualClickAction.action.started += ctx => IsRitualClickHeld = true;
+        _ritualClickAction.action.canceled += ctx => IsRitualClickHeld = false;
 
         _ritualLookAction.action.performed += ctx => RitualLookValue = ctx.ReadValue<Vector2>(); 
         _ritualLookAction.action.canceled += ctx => RitualLookValue = Vector2.zero;

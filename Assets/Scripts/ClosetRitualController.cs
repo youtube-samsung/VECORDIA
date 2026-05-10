@@ -231,4 +231,8 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
         if (cameraHandler != null) cameraHandler.ExitRitualMode();
         if (ritualActivator != null) ritualActivator.RitualFinished();
     }
+    public void AbortRitual()
+    {
+        EndRitual(); // Пока просто завершаем ритуал
+    }
 }

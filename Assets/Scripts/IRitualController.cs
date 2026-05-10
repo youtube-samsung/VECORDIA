@@ -6,5 +6,6 @@ public interface IRitualController
     void EndRitual();
     void Interact(int stage); 
     bool IsRitualActive { get; }
+    void AbortRitual();
 }
 
