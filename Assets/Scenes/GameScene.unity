@@ -3975,8 +3975,14 @@ MonoBehaviour:
   sliceForce: 0.5
   cuttingTolerance: 0.005
   maxCutDistance: 0.05
-  anxietyMultiplier: 0.1
-  knifeMovementSpeed: 0.01
+  knifeMovementSpeed: 0.0001
+  sliceAnimationDepth: 0.15
+  sliceAnimationDuration: 0.2
+  anxietyPenaltyMultiplier: 15
+  failAnxietyPenalty: 30
+  baseTremorAmplitude: 0.1
+  maxAnxietyTremorAmplitude: 1
+  tremorSpeed: 10
   anxietyCounterText: {fileID: 1010844115}
 --- !u!4 &1284571983
 Transform:

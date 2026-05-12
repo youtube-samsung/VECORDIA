@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 using System.Linq;
 using TMPro;
 using UnityEngine.InputSystem;
@@ -17,16 +18,21 @@ public class CucumberRitualController : MonoBehaviour, IRitualController
     public GameObject[] cutPoints;
 
     [Header("Настройки Нарезки")]
-    [Tooltip("Сила, с которой отлетает отрезанный ломтик.")]
     public float sliceForce = 1f;
-    [Tooltip("Максимальное расстояние от центра точки, которое считается ИДЕАЛЬНЫМ резом.")]
     public float cuttingTolerance = 0.01f;
-    [Tooltip("Максимальное расстояние, на котором клик засчитывается как попытка.")]
-    public float maxCutDistance = 0.05f;
-    [Tooltip("Множитель тревожности.")]
-    public float anxietyMultiplier = 0.25f;
-    [Tooltip("Множитель скорости движения ножа.")]
-    public float knifeMovementSpeed = 0.05f;
+    public float maxCutDistance = 0.06f;
+    public float knifeMovementSpeed = 0.02f;
+
+    [Header("Анимация Удара Ножом")]
+    public float sliceAnimationDepth = 0.15f;
+    public float sliceAnimationDuration = 0.2f;
+
+    [Header("Влияние Тревожности (Тремор)")]
+    public float anxietyPenaltyMultiplier = 10f;
+    public float failAnxietyPenalty = 30f;
+    public float baseTremorAmplitude = 0.01f;
+    public float maxAnxietyTremorAmplitude = 0.08f;
+    public float tremorSpeed = 10f;
 
     [Header("UI")]
     public TextMeshProUGUI anxietyCounterText;
@@ -34,148 +40,151 @@ public class CucumberRitualController : MonoBehaviour, IRitualController
     private int currentStageIndex = 0;
     private bool _isRitualActive = false;
     public bool IsRitualActive => _isRitualActive;
-    private float currentAnxiety = 0f;
+
     private bool canCut = false;
-    private float knifeMinX, knifeMaxX;
+    private bool isAnimatingCut = false;
+
+
+    private Vector3 initialKnifeLocalPos;
+
+
+    private void Start()
+    {
+        if (knifeObject != null)
+        {
+            initialKnifeLocalPos = knifeObject.transform.localPosition;
+        }
+    }
 
     public void StartRitual()
     {
         if (_isRitualActive) return;
         _isRitualActive = true;
-        currentAnxiety = 0f;
         currentStageIndex = 0;
         canCut = true;
+        isAnimatingCut = false;
+
         if (ritualActivator != null) ritualActivator.HidePrompt();
-        // Подписываемся на событие ТОЛЬКО при старте ритуала
         if (inputReader != null) inputReader.OnRitualClickPerformed += OnRitualClick;
 
         ToggleRitualObjects(true);
-        UpdateAnxietyUI();
 
         if (cameraHandler != null) cameraHandler.EnterRitualMode(ritualCameraTarget);
+        Cursor.visible = false;
+        Cursor.lockState = CursorLockMode.Locked;
     }
 
     private void OnDestroy()
     {
         if (inputReader != null) inputReader.OnRitualClickPerformed -= OnRitualClick;
     }
+
     public void Interact(int stage)
     {
-        // Неважно, какая стадия, для огурца это всегда просто начало.
-        if (!_isRitualActive)
-        {
-            StartRitual();
-        }
+        if (!_isRitualActive) StartRitual();
     }
-
-    //public void StartRitual()
-    //{
-    //    if (_isRitualActive) return;
-    //    _isRitualActive = true;
-    //    currentAnxiety = 0f;
-    //    currentStageIndex = 0;
-    //    canCut = true;
-
-    //    ToggleRitualObjects(true);
-    //    UpdateAnxietyUI();
-
-    //    if (cameraHandler != null) cameraHandler.EnterRitualMode(ritualCameraTarget);
-
-    //    Vector3 initialKnifePos = knifeObject.transform.position;
-    //    knifeMinX = initialKnifePos.x - 0.5f;
-    //    knifeMaxX = initialKnifePos.x + 0.5f;
-    //}
 
     private void Update()
     {
         if (!_isRitualActive) return;
 
+        UpdateAnxietyUI();
+
+        if (isAnimatingCut) return;
+
         float mouseXDelta = inputReader.RitualLookValue.x * knifeMovementSpeed * Time.deltaTime;
+
+        float currentTremorAmp = baseTremorAmplitude;
+        if (AnxietyManager.Instance != null)
+        {
+            float anxietyIntensity = AnxietyManager.Instance.GetTremorIntensity();
+            currentTremorAmp += maxAnxietyTremorAmplitude * anxietyIntensity;
+        }
+
+        float noise = (Mathf.PerlinNoise(Time.time * tremorSpeed, 0f) - 0.5f) * 2f;
+        float tremorOffset = noise * currentTremorAmp * Time.deltaTime;
+
         Vector3 newKnifePos = knifeObject.transform.position;
-        newKnifePos += cameraHandler.playerCamera.transform.right * mouseXDelta;
+        newKnifePos += cameraHandler.playerCamera.transform.right * (mouseXDelta + tremorOffset);
         knifeObject.transform.position = newKnifePos;
 
-        RaycastHit hit;
-        Vector3 rayStart = knifeObject.transform.position;
-        Vector3 rayDirection = Vector3.down;
-        float rayLength = 1f;
-
-        if (Physics.Raycast(rayStart, rayDirection, out hit, rayLength))
-        {
-            Color rayColor;
-            if (currentStageIndex < cutPoints.Length)
-            {
-                Transform targetCutPoint = cutPoints[currentStageIndex].transform;
-                float distanceToTarget = Vector3.Distance(hit.point, targetCutPoint.position);
-
-                if (distanceToTarget <= cuttingTolerance)
-                {
-                    rayColor = Color.green;
-                }
-                else if (distanceToTarget <= maxCutDistance)
-                {
-                    rayColor = Color.yellow;
-                }
-                else
-                {
-                    rayColor = Color.red;
-                }
-            }
-            else
-            {
-                rayColor = Color.grey;
-            }
-            Debug.DrawRay(rayStart, rayDirection * hit.distance, rayColor);
-        }
-        else
-        {
-            Debug.DrawRay(rayStart, rayDirection * rayLength, Color.red);
-        }
+        DrawDebugRay();
     }
 
     private void OnRitualClick()
     {
-        if (!_isRitualActive || !canCut) return;
+        if (!_isRitualActive || !canCut || isAnimatingCut) return;
+        StartCoroutine(KnifeSliceAnimation());
+    }
 
-        RaycastHit hit;
-        Vector3 rayStart = knifeObject.transform.position;
-        Vector3 rayDirection = Vector3.down;
-        float rayLength = 1f;
-
+    private IEnumerator KnifeSliceAnimation()
+    {
+        isAnimatingCut = true;
         canCut = false;
 
-        if (Physics.Raycast(rayStart, rayDirection, out hit, rayLength))
+        Vector3 originalPos = knifeObject.transform.position;
+        Vector3 downPos = originalPos + Vector3.down * sliceAnimationDepth;
+
+        float halfDuration = sliceAnimationDuration / 2f;
+        float elapsed = 0f;
+
+        while (elapsed < halfDuration)
         {
-            if (currentStageIndex >= cutPoints.Length)
-            {
-                canCut = true;
-                return;
-            }
+            if (!_isRitualActive) yield break;
+
+            knifeObject.transform.position = Vector3.Lerp(originalPos, downPos, elapsed / halfDuration);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+        knifeObject.transform.position = downPos;
+
+        ProcessCutImpact(originalPos);
+
+        if (!_isRitualActive) yield break;
+
+        elapsed = 0f;
+        while (elapsed < halfDuration)
+        {
+            knifeObject.transform.position = Vector3.Lerp(downPos, originalPos, elapsed / halfDuration);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+        knifeObject.transform.position = originalPos;
+
+        isAnimatingCut = false;
+        canCut = true;
+    }
+
+    private void ProcessCutImpact(Vector3 originalPos)
+    {
+        RaycastHit hit;
+        if (Physics.Raycast(originalPos, Vector3.down, out hit, 1f))
+        {
+            if (currentStageIndex >= cutPoints.Length) return;
 
             Transform targetCutPoint = cutPoints[currentStageIndex].transform;
             float distanceToTarget = Vector3.Distance(hit.point, targetCutPoint.position);
 
             if (distanceToTarget > maxCutDistance)
             {
-                Debug.Log($"СЛИШКОМ ДАЛЕКО! Разрез не выполнен. Расстояние: {distanceToTarget}");
-                canCut = true;
+                FailRitual("Слишком далеко от цели!");
                 return;
             }
 
             float missFactor = Mathf.InverseLerp(0, maxCutDistance, distanceToTarget);
-            currentAnxiety += missFactor * anxietyMultiplier;
-            Debug.Log($"Рез! Расстояние: {distanceToTarget:F4}, Фактор промаха: {missFactor:F2}, Тревожность + {missFactor * anxietyMultiplier:F3}");
-            UpdateAnxietyUI();
+
+            if (missFactor > 0 && AnxietyManager.Instance != null)
+            {
+                float penalty = missFactor * anxietyPenaltyMultiplier;
+                AnxietyManager.Instance.AddAnxiety(penalty);
+                Debug.Log($"Рез с помаркой. Штраф: +{penalty:F2}");
+            }
 
             PerformCut();
-
         }
         else
         {
-            Debug.Log("Нож ударил в пустоту!");
-            currentAnxiety += anxietyMultiplier;
-            UpdateAnxietyUI();
-            canCut = true;
+            FailRitual("Нож ударил мимо доски!");
         }
     }
 
@@ -187,6 +196,7 @@ public class CucumberRitualController : MonoBehaviour, IRitualController
         }
 
         currentStageIndex++;
+
         if (cucumberStages.Length > currentStageIndex && cucumberStages[currentStageIndex] != null)
         {
             cucumberStages[currentStageIndex].SetActive(true);
@@ -200,12 +210,20 @@ public class CucumberRitualController : MonoBehaviour, IRitualController
 
         if (currentStageIndex >= cutPoints.Length)
         {
-            Invoke("EndRitual", 1f);
+            Invoke("EndRitual", 0.5f);
         }
-        else
+    }
+
+    private void FailRitual(string reason)
+    {
+        Debug.LogWarning($"РИТУАЛ ПРОВАЛЕН: {reason}");
+
+        if (AnxietyManager.Instance != null)
         {
-            canCut = true;
+            AnxietyManager.Instance.AddAnxiety(failAnxietyPenalty);
         }
+
+        EndRitual();
     }
 
     public void EndRitual()
@@ -213,12 +231,19 @@ public class CucumberRitualController : MonoBehaviour, IRitualController
         if (!_isRitualActive) return;
         _isRitualActive = false;
 
-        // Отписываемся от события ТОЛЬКО при завершении ритуала
         if (inputReader != null) inputReader.OnRitualClickPerformed -= OnRitualClick;
+        StopAllCoroutines();
+
+        if (knifeObject != null)
+        {
+            knifeObject.transform.localPosition = initialKnifeLocalPos;
+        }
 
         ToggleRitualObjects(false);
         if (cameraHandler != null) cameraHandler.ExitRitualMode();
         if (ritualActivator != null) ritualActivator.RitualFinished();
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
     }
 
     private void ToggleRitualObjects(bool active)
@@ -233,15 +258,33 @@ public class CucumberRitualController : MonoBehaviour, IRitualController
         {
             foreach (var stage in cucumberStages) if (stage != null) stage.SetActive(false);
         }
-        if (anxietyCounterText != null) anxietyCounterText.gameObject.SetActive(active);
     }
 
     private void UpdateAnxietyUI()
     {
-        if (anxietyCounterText != null) anxietyCounterText.text = $"Тревожность: {currentAnxiety:F2}";
+        if (anxietyCounterText != null && AnxietyManager.Instance != null)
+        {
+            anxietyCounterText.text = $"Тревожность: {AnxietyManager.Instance.currentAnxiety:F1}";
+        }
     }
-    public void AbortRitual()
+
+    public void AbortRitual() { EndRitual(); }
+
+    private void DrawDebugRay()
     {
-        EndRitual(); // Пока просто завершаем ритуал
+        RaycastHit hit;
+        Vector3 rayStart = knifeObject.transform.position;
+        if (Physics.Raycast(rayStart, Vector3.down, out hit, 1f))
+        {
+            Color rayColor = Color.grey;
+            if (currentStageIndex < cutPoints.Length)
+            {
+                float dist = Vector3.Distance(hit.point, cutPoints[currentStageIndex].transform.position);
+                if (dist <= cuttingTolerance) rayColor = Color.green;
+                else if (dist <= maxCutDistance) rayColor = Color.yellow;
+                else rayColor = Color.red;
+            }
+            Debug.DrawRay(rayStart, Vector3.down * hit.distance, rayColor);
+        }
     }
 }
