@@ -13,28 +13,35 @@ public class SoilMeshGenerator : MonoBehaviour
     public Color colorOverwatered = new Color(0f, 0f, 0f, 1f);
 
     private Mesh soilMesh;
-    private Color[] meshColors = new Color[361];
+    private Color[] meshColors;
+
 
     public void GenerateMesh()
     {
         soilMesh = new Mesh();
         GetComponent<MeshFilter>().mesh = soilMesh;
 
-        Vector3[] vertices = new Vector3[361];
+        Vector3[] vertices = new Vector3[360 * 3];
         int[] triangles = new int[360 * 3];
-
-        vertices[0] = Vector3.zero;
-        meshColors[0] = colorDry;
+        meshColors = new Color[360 * 3];
 
         for (int i = 0; i < 360; i++)
         {
-            float rad = Mathf.Deg2Rad * i;
-            vertices[i + 1] = new Vector3(Mathf.Sin(rad) * soilRadius, 0, Mathf.Cos(rad) * soilRadius);
-            meshColors[i + 1] = colorDry;
+            float rad1 = Mathf.Deg2Rad * i;
+            float rad2 = Mathf.Deg2Rad * ((i + 1) % 360);
 
-            triangles[i * 3] = 0;
-            triangles[i * 3 + 1] = i + 1;
-            triangles[i * 3 + 2] = (i == 359) ? 1 : i + 2;
+
+            vertices[i * 3] = Vector3.zero;
+            vertices[i * 3 + 1] = new Vector3(Mathf.Sin(rad1) * soilRadius, 0, Mathf.Cos(rad1) * soilRadius);
+            vertices[i * 3 + 2] = new Vector3(Mathf.Sin(rad2) * soilRadius, 0, Mathf.Cos(rad2) * soilRadius); 
+
+            triangles[i * 3] = i * 3;
+            triangles[i * 3 + 1] = i * 3 + 1;
+            triangles[i * 3 + 2] = i * 3 + 2;
+
+            meshColors[i * 3] = colorDry;
+            meshColors[i * 3 + 1] = colorDry;
+            meshColors[i * 3 + 2] = colorDry;
         }
 
         soilMesh.vertices = vertices;
@@ -59,9 +66,12 @@ public class SoilMeshGenerator : MonoBehaviour
             else if (state == 2) targetColor = colorIdeal;
             else if (state == 3) targetColor = colorOverwatered;
 
-            meshColors[i + 1] = targetColor;
+            meshColors[i * 3] = targetColor;    
+            meshColors[i * 3 + 1] = targetColor;
+            meshColors[i * 3 + 2] = targetColor; 
         }
-        meshColors[0] = meshColors[1]; 
+
+
         soilMesh.colors = meshColors;
     }
 }
