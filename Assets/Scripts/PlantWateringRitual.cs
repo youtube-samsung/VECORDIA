@@ -108,7 +108,7 @@ public class PlantWateringRitual : MonoBehaviour, IRitualController
         bool isPerfect = true;
         for (int i = 0; i < 360; i++)
         {
-            if (soilDegrees[i] < 1)
+            if (soilDegrees[i] < 2)
             {
                 isPerfect = false;
                 break;
