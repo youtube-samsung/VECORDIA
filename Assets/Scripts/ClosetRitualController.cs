@@ -18,24 +18,22 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
     public Transform[] hangers;
     public ClothingItem[] clothes;
 
-
-    public float doorOpenDuration = 0.5f; 
-    [Tooltip("Целевой локальный угол Y для ЛЕВОЙ двери в ОТКРЫТОМ состоянии. Например, -90 (открывается наружу).")]
+    [Header("Настройки дверей")]
+    public float doorOpenDuration = 0.5f;
+    [Tooltip("Целевой локальный угол Y для ЛЕВОЙ двери в ОТКРЫТОМ состоянии. Например, -90.")]
     public float leftDoorOpenTargetAngle = -90f;
-    [Tooltip("Целевой локальный угол Y для ПРАВОЙ двери в ОТКРЫТОМ состоянии. Например, 90 (открывается наружу, если scale.x=-1).")]
+    [Tooltip("Целевой локальный угол Y для ПРАВОЙ двери в ОТКРЫТОМ состоянии. Например, 90.")]
     public float rightDoorOpenTargetAngle = 90f;
 
     private Coroutine doorAnimationCoroutine;
 
-    [Header("Настройки")]
-    public float doorOpenAngle = 90f;
-  
-  
+    [Header("Настройки перетаскивания")]
+    public float snapDistance = 0.5f;
 
     private bool _isRitualActive = false;
     public bool IsRitualActive => _isRitualActive;
     private bool areDoorsOpen = false;
-  public float snapDistance = 0.5f;
+
     private ClothingItem currentlyDraggedItem;
     private Vector3 dragOffset;
     private float dragPlaneDistance;
@@ -66,42 +64,30 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
         else if (stage == 1 && areDoorsOpen) StartRitual();
     }
 
-
     private void OpenDoors()
     {
         if (areDoorsOpen) return;
-
         areDoorsOpen = true;
 
         if (doorAnimationCoroutine != null) StopCoroutine(doorAnimationCoroutine);
         doorAnimationCoroutine = StartCoroutine(AnimateDoors(true));
     }
 
-    //private void CloseDoors()
-    //{
-    //    if (!areDoorsOpen) return;
-
-    //    areDoorsOpen = false;
-    //    if (doorAnimationCoroutine != null) StopCoroutine(doorAnimationCoroutine);
-    //    doorAnimationCoroutine = StartCoroutine(AnimateDoors(false));
-    //}
     IEnumerator AnimateDoors(bool opening)
     {
-
         Quaternion startRotationLeft = doorLeft.localRotation;
         Quaternion startRotationRight = doorRight.localRotation;
-
 
         Quaternion targetRotationLeft = Quaternion.Euler(
             doorLeft.localRotation.eulerAngles.x,
             opening ? leftDoorOpenTargetAngle : 0f,
-            doorLeft.localRotation.eulerAngles.z   
+            doorLeft.localRotation.eulerAngles.z
         );
 
         Quaternion targetRotationRight = Quaternion.Euler(
-            doorRight.localRotation.eulerAngles.x,  
-            opening ? rightDoorOpenTargetAngle : 0f, 
-            doorRight.localRotation.eulerAngles.z    
+            doorRight.localRotation.eulerAngles.x,
+            opening ? rightDoorOpenTargetAngle : 0f,
+            doorRight.localRotation.eulerAngles.z
         );
 
         float timeElapsed = 0;
@@ -114,7 +100,6 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
             yield return null;
         }
 
-       
         doorLeft.localRotation = targetRotationLeft;
         doorRight.localRotation = targetRotationRight;
 
@@ -150,9 +135,12 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
         if (currentlyDraggedItem == null)
         {
             Ray ray = cameraHandler.playerCamera.ScreenPointToRay(inputReader.RitualPointValue);
+
             if (Physics.Raycast(ray, out RaycastHit hit, 5f))
             {
-                ClothingItem item = hit.transform.GetComponent<ClothingItem>();
+
+                ClothingItem item = hit.transform.GetComponentInParent<ClothingItem>();
+
                 if (item != null)
                 {
                     currentlyDraggedItem = item;
@@ -215,7 +203,7 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
         }
         if (isSorted)
         {
-            Debug.Log("РИТУАЛ ЗАВЕРШЕН! ");
+            Debug.Log("РИТУАЛ ЗАВЕРШЕН!");
             EndRitual();
         }
     }
@@ -225,14 +213,14 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
         if (!_isRitualActive) return;
         _isRitualActive = false;
 
-    
         if (inputReader != null) inputReader.OnRitualClickPerformed -= OnDragStartOrEnd;
 
         if (cameraHandler != null) cameraHandler.ExitRitualMode();
         if (ritualActivator != null) ritualActivator.RitualFinished();
     }
+
     public void AbortRitual()
     {
-        EndRitual(); // Пока просто завершаем ритуал
+        EndRitual();
     }
 }

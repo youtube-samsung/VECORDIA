@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SoundData
   clips:
   - {fileID: 8300000, guid: 065de3f8ceef1ab4e9501c34b2ce73d5, type: 3}
-  minVolume: 0.179
-  maxVolume: 0.258
-  minPitch: 0.95
-  maxPitch: 1.02
+  minVolume: 0.05
+  maxVolume: 0.059
+  minPitch: 0.27
+  maxPitch: 0.44
