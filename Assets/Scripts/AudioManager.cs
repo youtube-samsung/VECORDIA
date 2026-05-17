@@ -72,6 +72,39 @@ public class AudioManager : MonoBehaviour
         tempSource.Play();
         Destroy(tempAudioObj, tempSource.clip.length / tempSource.pitch);
     }
+    // ћетод создает бесконечный 3D-звук и возвращает на него ссылку
+    public AudioSource PlayLoopingSound3D(SoundData soundData, Vector3 position)
+    {
+        if (soundData == null || soundData.clips.Length == 0) return null;
+
+        GameObject tempAudioObj = new GameObject("LoopingAudio_3D");
+        tempAudioObj.transform.position = position;
+
+        AudioSource tempSource = tempAudioObj.AddComponent<AudioSource>();
+        tempSource.clip = soundData.GetRandomClip();
+        tempSource.volume = soundData.GetRandomVolume();
+        tempSource.pitch = soundData.GetRandomPitch();
+
+        tempSource.spatialBlend = 1f;
+        tempSource.rolloffMode = AudioRolloffMode.Linear;
+        tempSource.minDistance = 1f;
+        tempSource.maxDistance = 15f;
+
+        tempSource.loop = true; // Ѕесконечный цикл
+        tempSource.Play();
+
+        return tempSource;
+    }
+
+    // ћетод дл€ остановки и удалени€ конкретного звука
+    public void StopLoopingSound(AudioSource sourceToStop)
+    {
+        if (sourceToStop != null)
+        {
+            sourceToStop.Stop();
+            Destroy(sourceToStop.gameObject);
+        }
+    }
 
     private void Update()
     {
@@ -79,9 +112,9 @@ public class AudioManager : MonoBehaviour
         if (AnxietyManager.Instance != null && heartbeatSource != null)
         {
             float anxietyFactor = AnxietyManager.Instance.currentAnxiety / 100f;
-            if (anxietyFactor > 0.3f)
+            if (anxietyFactor > 0.6f)
             {
-                heartbeatSource.volume = anxietyFactor;
+                heartbeatSource.volume = anxietyFactor/2;
                 heartbeatSource.pitch = 1f + (anxietyFactor * 0.5f);
             }
             else

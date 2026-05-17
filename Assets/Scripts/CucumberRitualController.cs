@@ -10,6 +10,7 @@ public class CucumberRitualController : MonoBehaviour, IRitualController
     public RitualCameraHandler cameraHandler;
     public RitualActivator ritualActivator;
     public InputReader inputReader;
+    public event System.Action OnInterruptionRequested;
 
     [Header("Объекты Ритуала")]
     public Transform ritualCameraTarget;
@@ -192,11 +193,28 @@ public class CucumberRitualController : MonoBehaviour, IRitualController
     {
         if (cucumberStages.Length > currentStageIndex && cucumberStages[currentStageIndex] != null)
         {
+            // === ФИКС ИСЧЕЗАЮЩЕЙ ПОПКИ ===
+            // Находим отрезанный кусок (у него есть Rigidbody) в текущей стадии
+            Rigidbody oldSlice = cucumberStages[currentStageIndex].GetComponentInChildren<Rigidbody>();
+            if (oldSlice != null)
+            {
+                // Отвязываем его от родителя, чтобы он не выключился вместе с ним!
+                oldSlice.transform.SetParent(null);
+            }
+
+            // Теперь спокойно выключаем стадию (огурец становится короче)
             cucumberStages[currentStageIndex].SetActive(false);
         }
 
         currentStageIndex++;
 
+        // === ВЫЗОВ РЕЖИССЕРА (например, испугаем на втором отрезанном куске) ===
+        if (currentStageIndex == 2)
+        {
+            OnInterruptionRequested?.Invoke();
+        }
+
+        // Включаем новую стадию и даем импульс новому куску
         if (cucumberStages.Length > currentStageIndex && cucumberStages[currentStageIndex] != null)
         {
             cucumberStages[currentStageIndex].SetActive(true);
@@ -224,6 +242,15 @@ public class CucumberRitualController : MonoBehaviour, IRitualController
         }
 
         EndRitual();
+    }
+    public void PauseRitual()
+    {
+        canCut = false; // Блокируем нажатие ЛКМ
+    }
+
+    public void ResumeRitual()
+    {
+        canCut = true; // Разрешаем резать дальше
     }
 
     public void EndRitual()

@@ -1,4 +1,5 @@
 using UnityEngine;
+using System;
 
 public interface IRitualController
 {
@@ -7,5 +8,9 @@ public interface IRitualController
     void Interact(int stage); 
     bool IsRitualActive { get; }
     void AbortRitual();
+
+    //event Action OnInterruptionRequested;
+    //void PauseRitual();
+    //void ResumeRitual();
 }
 
