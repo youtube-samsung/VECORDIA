@@ -85,7 +85,7 @@ public class AudioManager : MonoBehaviour
         tempSource.volume = soundData.GetRandomVolume();
         tempSource.pitch = soundData.GetRandomPitch();
 
-        tempSource.spatialBlend = 1f;
+        tempSource.spatialBlend = 0.7f;
         tempSource.rolloffMode = AudioRolloffMode.Linear;
         tempSource.minDistance = 1f;
         tempSource.maxDistance = 15f;
