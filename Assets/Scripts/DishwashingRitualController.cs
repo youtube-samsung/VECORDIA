@@ -1,75 +1,106 @@
 using UnityEngine;
-using System.Collections.Generic;
+using System.Collections;
 
 public class DishwashingZoneRitual : MonoBehaviour, IRitualController
 {
     [Header("Ссылки")]
     public RitualCameraHandler cameraHandler;
-    public RitualActivator ritualActivator; // Ссылка для скрытия надписи
+    public RitualActivator ritualActivator;
     public InputReader inputReader;
     public Transform spongeVisual;
-    public List<Transform> zones;
     public Transform ritualCameraTarget;
+    public Transform activeZoneContour;
+    public Renderer dirtRenderer;
+    public Transform plateTransform;
 
     [Header("Настройки размеров")]
-    public float spongeRadius = 0.1f;
-    public float zoneRadius = 0.15f;
-    [Tooltip("Максимальный радиус от центра тарелки, за который губка не вылетит")]
-    public float maxMovementRadius = 0.8f;
+    public float spongeRadius = 0.04f;
+    public float zoneRadius = 0.08f;
+    public float maxMovementRadius = 0.22f;
 
-    [Header("Физика инерции")]
+    [Header("Физика инерции губки")]
     public float maxMoveSpeed = 4f;
     public float baseFriction = 15f;
     public float panicFriction = 1.5f;
 
-    [Header("Баланс времени")]
-    public float baseHoldTime = 2f;
-    public float maxHoldTime = 4f;
+    [Header("Настройки движения Контура")]
+    public float baseZoneSpeed = 0.5f;
+    public float maxZoneSpeed = 1.5f;
+    public float zoneSmoothTime = 0.5f;
 
-    [Header("Штрафы")]
-    public float outsideAnxietyRate = 10f;
-    [Tooltip("Время (в секундах), которое прощается при вылете губки из зоны")]
-    public float gracePeriod = 0.5f;
+    [Header("Штрафы и Баланс")]
+    public float outsideAnxietyRate = 12f;
+    public float gracePeriod = 0.4f;
+    public float totalCleanDuration = 9f;
+    public float interruptionThresholdAlpha = 0.7f;
 
-    private int currentZoneIndex = 0;
-    private float currentZoneTimer = 0f;
-    private float outOfZoneTimer = 0f; // Таймер нахождения вне зоны
+    public event System.Action OnInterruptionRequested;
 
+    private float outOfZoneTimer = 0f;
     private Vector3 logicalPosition;
     private Vector3 currentVelocity;
-    private Vector3 ritualCenter; // Начальная точка (центр тарелки)
+    private Vector3 ritualCenter;
+    private Vector3 zoneTargetPosition;
+    private Vector3 zoneSmoothVelocity;
 
     private bool _isRitualActive = false;
-    private bool _ritualStarted = false;
+    private bool _isPaused = false;
+
+    private float initialContourY;
+    private float initialSpongeY;
+
+    private float cleanProgress = 0f;
+    private bool hasTriggeredInterruption = false;
+
     public bool IsRitualActive => _isRitualActive;
+
+    private void Start()
+    {
+        if (activeZoneContour != null)
+        {
+            initialContourY = activeZoneContour.position.y;
+        }
+        if (spongeVisual != null)
+        {
+            initialSpongeY = spongeVisual.position.y;
+        }
+    }
 
     public void Interact(int stage)
     {
-        StartRitual();
+        if (!_isRitualActive) StartRitual();
     }
 
     public void StartRitual()
     {
         if (_isRitualActive) return;
         _isRitualActive = true;
-        _ritualStarted = false;
-        currentZoneIndex = 0;
-        currentZoneTimer = 0f;
+        _isPaused = false;
         outOfZoneTimer = 0f;
 
-        // Запоминаем центр объекта ритуала (он должен стоять по центру тарелки)
-        ritualCenter = transform.position;
-        logicalPosition = spongeVisual.position;
+        ritualCenter = plateTransform != null ? plateTransform.position : transform.position;
 
-        // Скрываем надпись [E] помыть посуду
+        if (activeZoneContour != null)
+        {
+            initialContourY = activeZoneContour.position.y;
+        }
+        if (spongeVisual != null)
+        {
+            initialSpongeY = spongeVisual.position.y;
+        }
+
+        logicalPosition = new Vector3(spongeVisual.position.x, initialSpongeY, spongeVisual.position.z);
+        spongeVisual.position = logicalPosition;
+
         if (ritualActivator != null) ritualActivator.HidePrompt();
 
-        // Сбрасываем и показываем только первую зону
-        foreach (var z in zones) z.gameObject.SetActive(false);
-        if (zones.Count > 0)
+        UpdateDirtVisual();
+
+        if (activeZoneContour != null)
         {
-            zones[currentZoneIndex].gameObject.SetActive(true);
-            zones[currentZoneIndex].GetComponent<MeshRenderer>().material.color = Color.red;
+            activeZoneContour.gameObject.SetActive(true);
+            activeZoneContour.position = new Vector3(activeZoneContour.position.x, initialContourY, activeZoneContour.position.z);
+            PickNewZoneTarget();
         }
 
         if (cameraHandler != null) cameraHandler.EnterRitualMode(ritualCameraTarget);
@@ -77,131 +108,191 @@ public class DishwashingZoneRitual : MonoBehaviour, IRitualController
 
     private void Update()
     {
-        if (!_isRitualActive) return;
+        if (!_isRitualActive || _isPaused) return;
 
-        // Физика движения теперь работает ВСЕГДА
         HandleInertiaMovement();
+        HandleZoneMovement();
 
-        // А вот прогресс зоны и штрафы считаем ТОЛЬКО при зажатой кнопке
         if (inputReader.IsRitualClickHeld)
         {
-            if (!_ritualStarted) _ritualStarted = true;
             ProcessZoneProgress();
+        }
+        else
+        {
+            outOfZoneTimer = 0f;
         }
     }
 
     private void HandleInertiaMovement()
     {
-        // 1. Получаем ввод, но если кнопка НЕ зажата — считаем, что игрок "не толкает" губку (ввод = 0)
         Vector2 input = inputReader.IsRitualClickHeld ? inputReader.RitualLookValue : Vector2.zero;
 
-        // Рассчитываем желаемую скорость (куда игрок давит)
-        Vector3 targetVel = (cameraHandler.playerCamera.transform.right * input.x +
-                             cameraHandler.playerCamera.transform.up * input.y) * maxMoveSpeed;
+        Vector3 flatRight = cameraHandler.playerCamera.transform.right;
+        flatRight.y = 0f;
+        flatRight.Normalize();
 
-        // 2. Рассчитываем трение (как быстро губка остановится сама по себе)
-        float anxietyPercent = AnxietyManager.Instance.GetTremorIntensity();
+        Vector3 flatUp = cameraHandler.playerCamera.transform.up;
+        flatUp.y = 0f;
+        flatUp.Normalize();
+
+        Vector3 targetVel = (flatRight * input.x + flatUp * input.y) * maxMoveSpeed;
+
+        float anxietyPercent = AnxietyManager.Instance != null ? AnxietyManager.Instance.GetTremorIntensity() : 0f;
         float currentFriction = Mathf.Lerp(baseFriction, panicFriction, anxietyPercent);
 
-        // 3. Плавно меняем текущую скорость в сторону желаемой.
-        // Если input занулен (кнопка отпущена), Lerp будет плавно тянуть currentVelocity к нулю.
-        // Это и есть физика инерции.
         currentVelocity = Vector3.Lerp(currentVelocity, targetVel, currentFriction * Time.deltaTime);
-
-        // Рассчитываем новую позицию
         Vector3 nextPosition = logicalPosition + currentVelocity * Time.deltaTime;
+        nextPosition.y = initialSpongeY;
 
-        // 4. Ограничение зоны (чтобы губка не улетала за тарелку даже по инерции)
-        float distanceFromCenter = Vector3.Distance(nextPosition, ritualCenter);
+        float distanceFromCenter = Vector2.Distance(new Vector2(nextPosition.x, nextPosition.z), new Vector2(ritualCenter.x, ritualCenter.z));
         if (distanceFromCenter <= maxMovementRadius)
         {
             logicalPosition = nextPosition;
         }
         else
         {
-            // Если ударились об край — гасим скорость и прижимаем к границе
             Vector3 directionFromCenter = (nextPosition - ritualCenter).normalized;
-            logicalPosition = ritualCenter + directionFromCenter * maxMovementRadius;
+            directionFromCenter.y = 0f;
+            logicalPosition = ritualCenter + directionFromCenter.normalized * maxMovementRadius;
+            logicalPosition.y = initialSpongeY;
             currentVelocity = Vector3.zero;
         }
 
         spongeVisual.position = logicalPosition;
     }
 
-    private void ProcessZoneProgress()
+    private void HandleZoneMovement()
     {
-        if (currentZoneIndex >= zones.Count) return;
+        if (activeZoneContour == null) return;
 
-        Transform activeZone = zones[currentZoneIndex];
-        float dist = Vector3.Distance(logicalPosition, activeZone.position);
+        float anxietyPercent = AnxietyManager.Instance != null ? AnxietyManager.Instance.GetTremorIntensity() : 0f;
+        float currentMaxSpeed = Mathf.Lerp(baseZoneSpeed, maxZoneSpeed, anxietyPercent);
 
-        // Губка полностью внутри активной зоны
-        bool isFullyInside = (dist + spongeRadius) <= zoneRadius;
+        activeZoneContour.position = Vector3.SmoothDamp(
+            activeZoneContour.position,
+            zoneTargetPosition,
+            ref zoneSmoothVelocity,
+            zoneSmoothTime,
+            currentMaxSpeed
+        );
 
-        if (isFullyInside)
+        Vector3 clampedPos = activeZoneContour.position;
+        clampedPos.y = initialContourY;
+        activeZoneContour.position = clampedPos;
+
+        float distToTarget = Vector2.Distance(
+            new Vector2(activeZoneContour.position.x, activeZoneContour.position.z),
+            new Vector2(zoneTargetPosition.x, zoneTargetPosition.z)
+        );
+
+        if (distToTarget < 0.04f)
         {
-            outOfZoneTimer = 0f; // Сбрасываем таймер "прощения", так как вернулись
-
-            float anxietyPercent = AnxietyManager.Instance.GetTremorIntensity();
-            float requiredTime = Mathf.Lerp(baseHoldTime, maxHoldTime, anxietyPercent);
-
-            currentZoneTimer += Time.deltaTime;
-
-            // Плавное изменение цвета от красного к зеленому
-            activeZone.GetComponent<MeshRenderer>().material.color = Color.Lerp(Color.red, Color.green, currentZoneTimer / requiredTime);
-
-            if (currentZoneTimer >= requiredTime)
-            {
-                AdvanceToNextZone();
-            }
-        }
-        else
-        {
-            // Губка выскользнула, запускаем таймер "прощения"
-            outOfZoneTimer += Time.deltaTime;
-
-            if (outOfZoneTimer > gracePeriod)
-            {
-                // Начисляем тревогу только если игрок "тупит" дольше gracePeriod
-                AnxietyManager.Instance.AddAnxiety(outsideAnxietyRate * Time.deltaTime);
-            }
-
-            // Прогресс зоны медленно откатывается назад
-            currentZoneTimer = Mathf.Max(0, currentZoneTimer - Time.deltaTime * 0.5f);
+            PickNewZoneTarget();
         }
     }
 
-    private void AdvanceToNextZone()
+    private void PickNewZoneTarget()
     {
-        zones[currentZoneIndex].gameObject.SetActive(false);
-        currentZoneIndex++;
-        currentZoneTimer = 0f;
-        outOfZoneTimer = 0f;
+        float safeRadius = maxMovementRadius - zoneRadius;
+        if (safeRadius < 0f) safeRadius = maxMovementRadius * 0.5f;
 
-        if (currentZoneIndex < zones.Count)
+        Vector2 randomCircle = Random.insideUnitCircle * safeRadius;
+
+        zoneTargetPosition = new Vector3(
+            ritualCenter.x + randomCircle.x,
+            initialContourY,
+            ritualCenter.z + randomCircle.y
+        );
+    }
+
+    private void ProcessZoneProgress()
+    {
+        float dist = Vector2.Distance(
+            new Vector2(logicalPosition.x, logicalPosition.z),
+            new Vector2(activeZoneContour.position.x, activeZoneContour.position.z)
+        );
+
+        bool isInside = (dist + spongeRadius) <= zoneRadius;
+
+        if (isInside)
         {
-            zones[currentZoneIndex].gameObject.SetActive(true);
-            zones[currentZoneIndex].GetComponent<MeshRenderer>().material.color = Color.red; // Сброс цвета
+            outOfZoneTimer = 0f;
+            cleanProgress += Time.deltaTime;
+
+            UpdateDirtVisual();
+            CheckInterruptionTrigger();
+
+            if (cleanProgress >= totalCleanDuration)
+            {
+                EndRitual();
+            }
         }
         else
         {
-            EndRitual();
+            outOfZoneTimer += Time.deltaTime;
+            if (outOfZoneTimer > gracePeriod)
+            {
+                AnxietyManager.Instance.AddAnxiety(outsideAnxietyRate * Time.deltaTime);
+            }
         }
+    }
+
+    private void UpdateDirtVisual()
+    {
+        if (dirtRenderer == null) return;
+
+        float currentDirtAlpha = Mathf.Clamp01(1f - (cleanProgress / totalCleanDuration));
+        Color color = dirtRenderer.material.color;
+        color.a = currentDirtAlpha;
+        dirtRenderer.material.color = color;
+    }
+
+    private void CheckInterruptionTrigger()
+    {
+        if (hasTriggeredInterruption) return;
+
+        float currentDirtAlpha = Mathf.Clamp01(1f - (cleanProgress / totalCleanDuration));
+        if (currentDirtAlpha <= interruptionThresholdAlpha)
+        {
+            hasTriggeredInterruption = true;
+            // OnInterruptionRequested?.Invoke();
+        }
+    }
+
+    public void PauseRitual()
+    {
+        _isPaused = true;
+        currentVelocity = Vector3.zero;
+    }
+
+    public void ResumeRitual()
+    {
+        _isPaused = false;
+        Cursor.visible = false;
+        Cursor.lockState = CursorLockMode.Locked;
+        if (inputReader != null) inputReader.SwitchToRitual();
     }
 
     public void EndRitual()
     {
-        if (!_isRitualActive) return;
         _isRitualActive = false;
-
-        Debug.Log("Тарелка вымыта!");
-
+        _isPaused = false;
+        if (cleanProgress >= totalCleanDuration)
+        {
+            cleanProgress = 0f;
+            hasTriggeredInterruption = false;
+        }
+        if (activeZoneContour != null) activeZoneContour.gameObject.SetActive(false);
         if (cameraHandler != null) cameraHandler.ExitRitualMode();
-        if (ritualActivator != null) ritualActivator.RitualFinished(); // Возвращаем надпись [E]
+        if (ritualActivator != null) ritualActivator.RitualFinished();
     }
 
     public void AbortRitual()
     {
-        EndRitual();
+        _isRitualActive = false;
+        _isPaused = false;
+        if (activeZoneContour != null) activeZoneContour.gameObject.SetActive(false);
+        if (cameraHandler != null) cameraHandler.ExitRitualMode();
+        if (ritualActivator != null) ritualActivator.RitualFinished();
     }
 }
