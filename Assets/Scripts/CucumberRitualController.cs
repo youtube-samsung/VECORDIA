@@ -1,6 +1,8 @@
 using UnityEngine;
 using System.Collections;
 using TMPro;
+using NUnit.Framework;
+using System.Collections.Generic;
 
 public class CucumberRitualController : MonoBehaviour, IRitualController
 {
@@ -10,12 +12,13 @@ public class CucumberRitualController : MonoBehaviour, IRitualController
     public InputReader inputReader;
 
     public event System.Action OnInterruptionRequested;
-
+    
     [Header("Объекты Ритуала")]
     public Transform ritualCameraTarget;
     public GameObject knifeObject;
     public GameObject[] cucumberStages;
     public GameObject[] cutPoints;
+    private List<GameObject> ContainerSlice = new();
 
     [Header("Лазерный прицел (Свет уже внутри ножа!)")]
     [Tooltip("Перетащи сюда компонент Light, который ты сделал дочерним к ножу")]
@@ -54,6 +57,8 @@ public class CucumberRitualController : MonoBehaviour, IRitualController
     private bool isAnimatingCut = false;
     private Vector3 initialKnifeLocalPos;
 
+    
+
     private void Start()
     {
         if (knifeObject != null)
@@ -77,14 +82,11 @@ public class CucumberRitualController : MonoBehaviour, IRitualController
     {
         if (_isRitualActive) return;
 
-        GameObject[] loosePieces = GameObject.FindObjectsByType<GameObject>(FindObjectsSortMode.None);
-        foreach (var obj in loosePieces)
+        foreach ( GameObject obj in ContainerSlice)
         {
-            if (obj.transform.parent == null && obj.GetComponent<Rigidbody>() != null && obj.name.ToLower().Contains("cucumber"))
-            {
-                Destroy(obj);
-            }
+            Destroy(obj.gameObject);
         }
+        ContainerSlice.Clear();
 
         _isRitualActive = true;
         currentStageIndex = 0;
@@ -100,7 +102,7 @@ public class CucumberRitualController : MonoBehaviour, IRitualController
 
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
-    }
+         }
 
     private void Update()
     {
@@ -312,6 +314,7 @@ public class CucumberRitualController : MonoBehaviour, IRitualController
             {
                 Vector3 forceDirection = new Vector3(Random.Range(-0.5f, 0.5f), Random.Range(0.8f, 1.2f), Random.Range(-0.2f, 0.2f));
                 sliceRb.AddForce(forceDirection.normalized * sliceForce, ForceMode.Impulse);
+                ContainerSlice.Add(sliceRb.gameObject);
             }
         }
 

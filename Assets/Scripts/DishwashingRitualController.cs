@@ -51,6 +51,7 @@ public class DishwashingZoneRitual : MonoBehaviour, IRitualController
 
     private float cleanProgress = 0f;
     private bool hasTriggeredInterruption = false;
+    private Material dirtMaterial;
 
     public bool IsRitualActive => _isRitualActive;
 
@@ -63,6 +64,10 @@ public class DishwashingZoneRitual : MonoBehaviour, IRitualController
         if (spongeVisual != null)
         {
             initialSpongeY = spongeVisual.position.y;
+        }
+        if (dirtRenderer != null)
+        {
+            dirtMaterial = dirtRenderer.material;
         }
     }
 
@@ -129,10 +134,15 @@ public class DishwashingZoneRitual : MonoBehaviour, IRitualController
 
         Vector3 flatRight = cameraHandler.playerCamera.transform.right;
         flatRight.y = 0f;
-        flatRight.Normalize();
+        if (flatRight.sqrMagnitude > 0.001f) flatRight.Normalize();
 
         Vector3 flatUp = cameraHandler.playerCamera.transform.up;
         flatUp.y = 0f;
+        if (flatUp.sqrMagnitude <= 0.001f)
+        {
+            flatUp = cameraHandler.playerCamera.transform.forward;
+            flatUp.y = 0f;
+        }
         flatUp.Normalize();
 
         Vector3 targetVel = (flatRight * input.x + flatUp * input.y) * maxMoveSpeed;
@@ -212,7 +222,7 @@ public class DishwashingZoneRitual : MonoBehaviour, IRitualController
             new Vector2(activeZoneContour.position.x, activeZoneContour.position.z)
         );
 
-        bool isInside = (dist + spongeRadius) <= zoneRadius;
+        bool isInside = dist <= zoneRadius;
 
         if (isInside)
         {
@@ -230,7 +240,7 @@ public class DishwashingZoneRitual : MonoBehaviour, IRitualController
         else
         {
             outOfZoneTimer += Time.deltaTime;
-            if (outOfZoneTimer > gracePeriod)
+            if (outOfZoneTimer > gracePeriod && AnxietyManager.Instance != null)
             {
                 AnxietyManager.Instance.AddAnxiety(outsideAnxietyRate * Time.deltaTime);
             }
@@ -239,12 +249,12 @@ public class DishwashingZoneRitual : MonoBehaviour, IRitualController
 
     private void UpdateDirtVisual()
     {
-        if (dirtRenderer == null) return;
+        if (dirtMaterial == null) return;
 
         float currentDirtAlpha = Mathf.Clamp01(1f - (cleanProgress / totalCleanDuration));
-        Color color = dirtRenderer.material.color;
+        Color color = dirtMaterial.color;
         color.a = currentDirtAlpha;
-        dirtRenderer.material.color = color;
+        dirtMaterial.color = color;
     }
 
     private void CheckInterruptionTrigger()
