@@ -139,7 +139,7 @@ public class PlantWateringRitual : MonoBehaviour, IRitualController
 
         if (overwateredDegreesInThisSpray > 0 && AnxietyManager.Instance != null)
         {
-            AnxietyManager.Instance.AddAnxiety(overwaterAnxietyPenalty * overwateredDegreesInThisSpray);
+            AnxietyManager.Instance.AddPenalty(overwaterAnxietyPenalty * overwateredDegreesInThisSpray);
         }
 
         float currentProgressPercent = ((float)successfullyWateredAngles / 360f) * 100f;

@@ -1,6 +1,6 @@
 using UnityEngine;
 using System;
-using TMPro; // <-- ОБЯЗАТЕЛЬНО добавить для работы с текстом
+using TMPro;
 
 public class AnxietyManager : MonoBehaviour
 {
@@ -8,64 +8,84 @@ public class AnxietyManager : MonoBehaviour
 
     [Header("Настройки")]
     public float maxAnxiety = 100f;
-    public float currentAnxiety = 0f;
-
-    [Header("UI для дебага")]
-    public TextMeshProUGUI anxietyDebugText; // <-- Ссылка на текст на экране
+    public TextMeshProUGUI anxietyDebugText;
 
     public event Action OnMentalBreakdown;
+    public event Action<int> OnAnxietyThresholdReached;
+
+    // ТВОЕ НОВОЕ НАЗВАНИЕ
+    public float CurrentTotalAnxiety { get; private set; }
+
+    private int _lastThreshold = 0;
+    private bool _isDead = false;
 
     private void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
+        if (Instance == null) Instance = this;
+        else Destroy(gameObject);
     }
 
-    private void Start()
+    public void ResetAnxiety()
     {
-        UpdateUI(); // Показываем нули при старте игры
+        CurrentTotalAnxiety = 0f;
+        _lastThreshold = 0;
+        _isDead = false;
+        UpdateUI();
     }
 
-    public void AddAnxiety(float amount)
+    // ТВОЕ НОВОЕ НАЗВАНИЕ (Сюда прилетают штрафы от ритуалов)
+    public void AddPenalty(float amount)
     {
-        currentAnxiety += amount;
-        currentAnxiety = Mathf.Clamp(currentAnxiety, 0, maxAnxiety);
+        if (_isDead) return;
 
-        UpdateUI(); // <-- Обновляем текст при каждом росте
+        CurrentTotalAnxiety += amount;
+        CurrentTotalAnxiety = Mathf.Clamp(CurrentTotalAnxiety, 0, maxAnxiety);
 
-        if (currentAnxiety >= maxAnxiety)
+        CheckThresholds();
+        UpdateUI();
+
+        if (CurrentTotalAnxiety >= maxAnxiety)
         {
-            Debug.LogWarning("ГЛОБАЛЬНЫЙ МЕНТАЛЬНЫЙ СРЫВ!");
+            _isDead = true;
             OnMentalBreakdown?.Invoke();
         }
     }
 
-    public void ReduceAnxiety(float amount)
+    private void Update()
     {
-        currentAnxiety -= amount;
-        currentAnxiety = Mathf.Clamp(currentAnxiety, 0, maxAnxiety);
+        if (_isDead || TimeManager.Instance == null) return;
 
-        UpdateUI(); // <-- Обновляем текст при снижении
+        // Равномерный рост: 100% делится на время петли
+        float anxietyPerSecond = maxAnxiety / TimeManager.Instance.totalLoopDuration;
+
+        CurrentTotalAnxiety += anxietyPerSecond * Time.deltaTime;
+        CurrentTotalAnxiety = Mathf.Clamp(CurrentTotalAnxiety, 0, maxAnxiety);
+
+        UpdateUI();
+        CheckThresholds();
+
+        if (CurrentTotalAnxiety >= maxAnxiety)
+        {
+            _isDead = true;
+            OnMentalBreakdown?.Invoke();
+        }
     }
 
-    public float GetTremorIntensity()
+    private void CheckThresholds()
     {
-        return currentAnxiety / maxAnxiety;
+        int currentDecade = Mathf.FloorToInt(CurrentTotalAnxiety / 10f) * 10;
+        if (currentDecade > _lastThreshold && currentDecade < 100)
+        {
+            _lastThreshold = currentDecade;
+            OnAnxietyThresholdReached?.Invoke(_lastThreshold);
+        }
     }
+
+    public float GetTremorIntensity() => CurrentTotalAnxiety / maxAnxiety;
 
     private void UpdateUI()
     {
         if (anxietyDebugText != null)
-        {
-            // Форматируем до 1 знака после запятой, чтобы цифры не мельтешили
-            anxietyDebugText.text = $"Тревожность: {currentAnxiety:F1} / {maxAnxiety}";
-        }
+            anxietyDebugText.text = $"Тревожность: {Mathf.FloorToInt(CurrentTotalAnxiety)}%";
     }
 }

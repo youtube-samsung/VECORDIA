@@ -242,7 +242,7 @@ public class DishwashingZoneRitual : MonoBehaviour, IRitualController
             outOfZoneTimer += Time.deltaTime;
             if (outOfZoneTimer > gracePeriod && AnxietyManager.Instance != null)
             {
-                AnxietyManager.Instance.AddAnxiety(outsideAnxietyRate * Time.deltaTime);
+                AnxietyManager.Instance.AddPenalty(outsideAnxietyRate * Time.deltaTime);
             }
         }
     }

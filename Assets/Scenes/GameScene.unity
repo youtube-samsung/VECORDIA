@@ -1814,12 +1814,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FirstPersonController
   inputReader: {fileID: 570600791}
   playerCamera: {fileID: 1571217749}
-  walkSpeed: 1
-  runSpeed: 1.5
-  jumpSpeed: 2
+  walkSpeed: 1.5
+  runSpeed: 2
+  jumpSpeed: 1
   gravityMultiplier: 1
   stickToGroundForce: 1
-  mouseSensitivity: 0.01
+  mouseSensitivity: 0.03
   maxLookAngle: 80
   smoothMouse: 1
   smoothTime: 2.5
@@ -4022,6 +4022,37 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 2007387125}
   m_SourcePrefab: {fileID: 100100000, guid: a51cae5bf6869134fa608902d9d6ea7f, type: 3}
+--- !u!1 &801339530
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 801339531}
+  m_Layer: 0
+  m_Name: REspawn
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &801339531
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 801339530}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: -6.574, y: 2.648, z: -5.945}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
 --- !u!1 &806382554
 GameObject:
   m_ObjectHideFlags: 0
@@ -11723,7 +11754,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1163994724
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12336,7 +12367,7 @@ MonoBehaviour:
   sliceSound: {fileID: 11400000, guid: 67232c70f7fa4e04fa8546470dc6e56e, type: 2}
   knifeMissSound: {fileID: 11400000, guid: 67232c70f7fa4e04fa8546470dc6e56e, type: 2}
   sliceForce: 0.5
-  cuttingTolerance: 0.005
+  cuttingTolerance: 0.003
   maxCutDistance: 0.05
   knifeMovementSpeed: 0.0001
   sliceAnimationDepth: 0.15
@@ -12594,6 +12625,51 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1305416573}
   m_CullTransparentMesh: 1
+--- !u!1 &1306652037
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1306652039}
+  - component: {fileID: 1306652038}
+  m_Layer: 0
+  m_Name: TimeManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1306652038
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1306652037}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e810212de9d27444b9b1105887c06643, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TimeManager
+  totalLoopDuration: 420
+--- !u!4 &1306652039
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1306652037}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -1.61088, y: 2.693, z: -6.59012}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1322711234
 GameObject:
   m_ObjectHideFlags: 0
@@ -12605,7 +12681,7 @@ GameObject:
   - component: {fileID: 1322711236}
   - component: {fileID: 1322711235}
   m_Layer: 0
-  m_Name: GameManager
+  m_Name: AnxietyManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -12624,7 +12700,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AnxietyManager
   maxAnxiety: 100
-  currentAnxiety: 0
   anxietyDebugText: {fileID: 1010844115}
 --- !u!4 &1322711236
 Transform:
@@ -13394,11 +13469,11 @@ MonoBehaviour:
   pulverizerObject: {fileID: 9400819}
   sprayParticles: {fileID: 1137743555}
   sprayAngleWidth: 30
-  sprayCooldown: 0.5
-  baseRotationSpeed: 50
-  maxRotationSpeed: 100
+  sprayCooldown: 0.1
+  baseRotationSpeed: 100
+  maxRotationSpeed: 200
   overwaterAnxietyPenalty: 0.2
-  requiredWateredPercentage: 85
+  requiredWateredPercentage: 95
 --- !u!114 &1488575833
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -14361,6 +14436,53 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1759845063}
   m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1794838283
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1794838285}
+  - component: {fileID: 1794838284}
+  m_Layer: 0
+  m_Name: GameLoopManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1794838284
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1794838283}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbc1e70dfd6f77042bb573caa30a1042, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GameLoopManager
+  playerTransform: {fileID: 358417536}
+  bedSpawnPoint: {fileID: 801339531}
+  clockText: {fileID: 0}
+--- !u!4 &1794838285
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1794838283}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -1.61088, y: 1.54848, z: -6.59012}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1811549660
 GameObject:
   m_ObjectHideFlags: 0
@@ -16475,17 +16597,17 @@ MonoBehaviour:
   activeZoneContour: {fileID: 1301412778}
   dirtRenderer: {fileID: 1033317314}
   plateTransform: {fileID: 1161325263}
-  spongeRadius: 0.04
+  spongeRadius: 0.042
   zoneRadius: 0.06
   maxMovementRadius: 0.25
   maxMoveSpeed: 0.01
-  baseFriction: 5
-  panicFriction: 2
+  baseFriction: 2.5
+  panicFriction: 5
   baseZoneSpeed: 0.1
   maxZoneSpeed: 1
   zoneSmoothTime: 0.5
-  outsideAnxietyRate: 1
-  gracePeriod: 0.7
+  outsideAnxietyRate: 2
+  gracePeriod: 0.3
   totalCleanDuration: 9
 --- !u!65 &2128400697
 BoxCollider:
@@ -16580,7 +16702,6 @@ SceneRoots:
   - {fileID: 259045230}
   - {fileID: 703790431}
   - {fileID: 2128400693}
-  - {fileID: 1322711236}
   - {fileID: 1290600875}
   - {fileID: 1042891054}
   - {fileID: 619711102}
@@ -16592,3 +16713,7 @@ SceneRoots:
   - {fileID: 660977171}
   - {fileID: 1081212271}
   - {fileID: 123325466}
+  - {fileID: 1794838285}
+  - {fileID: 1306652039}
+  - {fileID: 1322711236}
+  - {fileID: 801339531}

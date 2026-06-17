@@ -111,7 +111,7 @@ public class AudioManager : MonoBehaviour
 
         if (AnxietyManager.Instance != null && heartbeatSource != null)
         {
-            float anxietyFactor = AnxietyManager.Instance.currentAnxiety / 100f;
+            float anxietyFactor = AnxietyManager.Instance.CurrentTotalAnxiety / 100f;
             if (anxietyFactor > 0.6f)
             {
                 heartbeatSource.volume = anxietyFactor/2;

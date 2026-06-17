@@ -270,7 +270,7 @@ public class CucumberRitualController : MonoBehaviour, IRitualController
             if (missFactor > 0 && AnxietyManager.Instance != null)
             {
                 float penalty = missFactor * anxietyPenaltyMultiplier;
-                AnxietyManager.Instance.AddAnxiety(penalty);
+                AnxietyManager.Instance.AddPenalty(penalty);
             }
 
             PerformCut();
@@ -318,7 +318,7 @@ public class CucumberRitualController : MonoBehaviour, IRitualController
 
     private void FailRitual(string reason)
     {
-        if (AnxietyManager.Instance != null) AnxietyManager.Instance.AddAnxiety(failAnxietyPenalty); //[cite: 2]
+        if (AnxietyManager.Instance != null) AnxietyManager.Instance.AddPenalty(failAnxietyPenalty); //[cite: 2]
         EndRitual();
     }
 
@@ -379,7 +379,7 @@ public class CucumberRitualController : MonoBehaviour, IRitualController
     {
         if (anxietyCounterText != null && AnxietyManager.Instance != null)
         {
-            anxietyCounterText.text = $"Тревожность: {AnxietyManager.Instance.currentAnxiety:F1}"; //[cite: 2]
+            anxietyCounterText.text = $"Тревожность: {AnxietyManager.Instance.CurrentTotalAnxiety:F1}"; //[cite: 2]
         }
     }
 
