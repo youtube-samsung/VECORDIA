@@ -21,16 +21,16 @@ public class PlantWateringRitual : MonoBehaviour, IRitualController
     public float maxRotationSpeed = 100f;
     public float overwaterAnxietyPenalty = 0.5f;
     public float requiredWateredPercentage = 85f;
-    public float interruptionPercentage = 50f;
+    //public float interruptionPercentage = 50f;
 
-    public event System.Action OnInterruptionRequested;
+    //public event System.Action OnInterruptionRequested;
 
     private int[] soilDegrees = new int[360];
     private int successfullyWateredAngles = 0;
     private float currentCooldown = 0f;
     private bool _isRitualActive = false;
     private bool _isPaused = false;
-    private bool hasTriggeredInterruption = false;
+    //private bool hasTriggeredInterruption = false;
 
     public bool IsRitualActive => _isRitualActive;
 
@@ -56,7 +56,7 @@ public class PlantWateringRitual : MonoBehaviour, IRitualController
         _isPaused = false;
         currentCooldown = 0f;
         successfullyWateredAngles = 0;
-        hasTriggeredInterruption = false;
+
 
         System.Array.Clear(soilDegrees, 0, soilDegrees.Length);
 
@@ -144,11 +144,7 @@ public class PlantWateringRitual : MonoBehaviour, IRitualController
 
         float currentProgressPercent = ((float)successfullyWateredAngles / 360f) * 100f;
 
-        if (!hasTriggeredInterruption && currentProgressPercent >= interruptionPercentage)
-        {
-            hasTriggeredInterruption = true;
-            // OnInterruptionRequested?.Invoke();
-        }
+
 
         if (currentProgressPercent >= requiredWateredPercentage)
         {

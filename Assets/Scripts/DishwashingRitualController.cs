@@ -32,9 +32,9 @@ public class DishwashingZoneRitual : MonoBehaviour, IRitualController
     public float outsideAnxietyRate = 12f;
     public float gracePeriod = 0.4f;
     public float totalCleanDuration = 9f;
-    public float interruptionThresholdAlpha = 0.7f;
+    //public float interruptionThresholdAlpha = 0.7f;
 
-    public event System.Action OnInterruptionRequested;
+    //public event System.Action OnInterruptionRequested;
 
     private float outOfZoneTimer = 0f;
     private Vector3 logicalPosition;
@@ -50,7 +50,7 @@ public class DishwashingZoneRitual : MonoBehaviour, IRitualController
     private float initialSpongeY;
 
     private float cleanProgress = 0f;
-    private bool hasTriggeredInterruption = false;
+    //private bool hasTriggeredInterruption = false;
     private Material dirtMaterial;
 
     public bool IsRitualActive => _isRitualActive;
@@ -230,7 +230,7 @@ public class DishwashingZoneRitual : MonoBehaviour, IRitualController
             cleanProgress += Time.deltaTime;
 
             UpdateDirtVisual();
-            CheckInterruptionTrigger();
+            
 
             if (cleanProgress >= totalCleanDuration)
             {
@@ -257,17 +257,7 @@ public class DishwashingZoneRitual : MonoBehaviour, IRitualController
         dirtMaterial.color = color;
     }
 
-    private void CheckInterruptionTrigger()
-    {
-        if (hasTriggeredInterruption) return;
 
-        float currentDirtAlpha = Mathf.Clamp01(1f - (cleanProgress / totalCleanDuration));
-        if (currentDirtAlpha <= interruptionThresholdAlpha)
-        {
-            hasTriggeredInterruption = true;
-            // OnInterruptionRequested?.Invoke();
-        }
-    }
 
     public void PauseRitual()
     {
@@ -290,7 +280,7 @@ public class DishwashingZoneRitual : MonoBehaviour, IRitualController
         if (cleanProgress >= totalCleanDuration)
         {
             cleanProgress = 0f;
-            hasTriggeredInterruption = false;
+
         }
         if (activeZoneContour != null) activeZoneContour.gameObject.SetActive(false);
         if (cameraHandler != null) cameraHandler.ExitRitualMode();

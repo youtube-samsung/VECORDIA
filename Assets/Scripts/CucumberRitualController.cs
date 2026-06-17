@@ -11,7 +11,7 @@ public class CucumberRitualController : MonoBehaviour, IRitualController
     public RitualActivator ritualActivator;
     public InputReader inputReader;
 
-    public event System.Action OnInterruptionRequested;
+    //public event System.Action OnInterruptionRequested;
     
     [Header("Объекты Ритуала")]
     public Transform ritualCameraTarget;
@@ -142,15 +142,14 @@ public class CucumberRitualController : MonoBehaviour, IRitualController
 
         cutLightMarker.gameObject.SetActive(true);
 
-        // Стреляем невидимым измерительным лучом строго из позиции самого прожектора-света вниз
+
         Vector3 rayStart = cutLightMarker.transform.position;
         RaycastHit hit;
 
-        // Пускаем луч чуть дальше (на 1.5 метра), чтобы он точно долетел до доски
+
         if (Physics.Raycast(rayStart, Vector3.down, out hit, 1.5f))
         {
-            // === ЗАЩИТА ОТ ПОПАДАНИЯ В СЕБЯ ===
-            // Если луч наткнулся на нож или на любую дочернюю детальку ножа — игнорируем этот кадр
+
             if (hit.collider.gameObject == knifeObject || hit.collider.transform.IsChildOf(knifeObject.transform))
             {
                 return;
@@ -158,32 +157,32 @@ public class CucumberRitualController : MonoBehaviour, IRitualController
 
             Transform targetCutPoint = cutPoints[currentStageIndex].transform;
 
-            // Считаем дистанцию до идеального реза только по горизонтали (XZ)
+
             float dist = Vector2.Distance(
                 new Vector2(hit.point.x, hit.point.z),
                 new Vector2(targetCutPoint.position.x, targetCutPoint.position.z)
             );
 
-            // Динамически меняем параметры Spotlight
+
             if (dist <= cuttingTolerance)
             {
                 cutLightMarker.color = Color.green;
-                cutLightMarker.intensity = maxLightIntensity; // 100% яркости
+                cutLightMarker.intensity = maxLightIntensity; 
             }
             else if (dist <= maxCutDistance)
             {
                 cutLightMarker.color = Color.yellow;
-                cutLightMarker.intensity = maxLightIntensity * 0.7f; // 70% яркости
+                cutLightMarker.intensity = maxLightIntensity * 0.7f; 
             }
             else
             {
                 cutLightMarker.color = Color.red;
-                cutLightMarker.intensity = maxLightIntensity * 0.3f; // 30% яркости
+                cutLightMarker.intensity = maxLightIntensity * 0.3f; 
             }
         }
         else
         {
-            // Если нож улетел куда-то совсем мимо доски — гасим лазер
+
             cutLightMarker.gameObject.SetActive(false);
         }
     }
@@ -232,29 +231,25 @@ public class CucumberRitualController : MonoBehaviour, IRitualController
     {
         if (currentStageIndex >= cutPoints.Length) return;
 
-        // Проверяем, назначен ли фонарик
         if (cutLightMarker == null)
         {
             Debug.LogError("[Cucumber] КРИТИЧЕСКАЯ ОШИБКА: Забыл перетащить Light в слот CutLightMarker!");
             return;
         }
 
-        // Точка старта луча — строго НАД нашим фонариком, но на исходной (верхней) высоте ножа
         Vector3 rayStart = new Vector3(cutLightMarker.transform.position.x, originalPos.y, cutLightMarker.transform.position.z);
 
         RaycastHit hit;
-        // Пускаем луч вниз из идеальной точки лезвия
+
         if (Physics.Raycast(rayStart, Vector3.down, out hit, 1.5f))
         {
             Transform targetCutPoint = cutPoints[currentStageIndex].transform;
 
-            // Считаем промах ТОЛЬКО по горизонтали (X и Z), полностью игнорируя высоту Y!
             float distanceToTarget = Vector2.Distance(
                 new Vector2(hit.point.x, hit.point.z),
                 new Vector2(targetCutPoint.position.x, targetCutPoint.position.z)
             );
 
-            // Дебаг-лог в консоль, чтобы ты видел точное расстояние в метрах до цели
             Debug.Log($"[Cut Test] Дистанция до цели по XZ: {distanceToTarget:F4} метров. Макс. лимит: {maxCutDistance}");
 
             if (distanceToTarget > maxCutDistance)
@@ -266,11 +261,11 @@ public class CucumberRitualController : MonoBehaviour, IRitualController
                 return;
             }
 
-            // Успешный срез — играем смачный звук
+
             if (AudioManager.Instance != null && sliceSound != null)
                 AudioManager.Instance.PlaySound3D(sliceSound, knifeObject.transform.position);
 
-            // Начисляем микро-штраф тревоги, если отрезал не идеально ровно
+
             float missFactor = Mathf.InverseLerp(0, maxCutDistance, distanceToTarget);
             if (missFactor > 0 && AnxietyManager.Instance != null)
             {
@@ -301,10 +296,7 @@ public class CucumberRitualController : MonoBehaviour, IRitualController
 
         currentStageIndex++;
 
-        if (currentStageIndex == 2)
-        {
-            OnInterruptionRequested?.Invoke(); 
-        }
+
 
         if (cucumberStages.Length > currentStageIndex && cucumberStages[currentStageIndex] != null)
         {
