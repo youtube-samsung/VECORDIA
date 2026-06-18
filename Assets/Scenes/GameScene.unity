@@ -472,7 +472,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
+  m_Size: {x: 0.3, y: 0.1, z: 0.3}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!4 &67015355
 Transform:
@@ -483,7 +483,7 @@ Transform:
   m_GameObject: {fileID: 67015352}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.28900003, y: -0.546, z: 0.027999997}
+  m_LocalPosition: {x: 0.012, y: 0.101, z: 0.131}
   m_LocalScale: {x: 2, y: 3, z: 2}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -502,10 +502,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RitualActivator
   inputReader: {fileID: 570600791}
-  interactionPromptText: {fileID: 1360159271}
+  playerCamera: {fileID: 1571217752}
   targetRitualScript: {fileID: 1284571982}
-  interactionPrompts:
-  - "\u0412\u0437\u0430\u0438\u043C\u043E\u0434\u0435\u0439\u0441\u0442\u0432\u043E\u0432\u0430\u0442\u044C"
+  interactDistance: 1.5
+  interactionPromptText: {fileID: 1360159271}
+  interactionPrompts: []
+  crosshairImage: {fileID: 1537660041}
+  normalScale: 1
+  activeScale: 2
+  crosshairAnimSpeed: 15
+  normalColor: {r: 1, g: 1, b: 1, a: 0.5}
+  activeColor: {r: 0.394323, g: 0.6415094, b: 0.14222142, a: 1}
+  onInteractEvent:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &91435232
 GameObject:
   m_ObjectHideFlags: 0
@@ -3243,7 +3253,7 @@ GameObject:
   - component: {fileID: 660977170}
   - component: {fileID: 660977169}
   - component: {fileID: 660977168}
-  - component: {fileID: 660977167}
+  - component: {fileID: 660977172}
   m_Layer: 0
   m_Name: cuCUBer
   m_TagString: Untagged
@@ -3251,20 +3261,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &660977167
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 660977166}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c79d250fe03444b468e332f49f6b4b1b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CutsceneTrigger
-  cutsceneManager: {fileID: 1944011960}
-  promptUI: {fileID: 1360159269}
 --- !u!65 &660977168
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -3280,11 +3276,11 @@ BoxCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 1
+  m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 20, y: 20, z: 20}
+  m_Size: {x: 2, y: 2, z: 2}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!23 &660977169
 MeshRenderer:
@@ -3352,12 +3348,51 @@ Transform:
   m_GameObject: {fileID: 660977166}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.3142, y: 1.8669, z: -5.336}
+  m_LocalPosition: {x: 0.3142, y: 2.052, z: -5.336}
   m_LocalScale: {x: 0.1, y: 0.1, z: 0.1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &660977172
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 660977166}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ca7bda749be059a419db483e4e3612aa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RitualActivator
+  inputReader: {fileID: 570600791}
+  playerCamera: {fileID: 1571217752}
+  targetRitualScript: {fileID: 0}
+  interactDistance: 1.5
+  interactionPromptText: {fileID: 1360159271}
+  interactionPrompts: []
+  crosshairImage: {fileID: 1537660041}
+  normalScale: 1
+  activeScale: 2
+  crosshairAnimSpeed: 15
+  normalColor: {r: 1, g: 1, b: 1, a: 0.5}
+  activeColor: {r: 0.29504877, g: 1, b: 0.0047169924, a: 1}
+  onInteractEvent:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1944011960}
+        m_TargetAssemblyTypeName: CutsceneManager, Assembly-CSharp
+        m_MethodName: Play
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!1001 &671816544
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4780,7 +4815,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 61bf3a7cadc10db4ba73ea2402e07ec9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CutsceneManager
-  playOnStart: 1
+  playOnStart: 0
   steps:
   - stepName: WakeUp1
     lookTarget: {fileID: 0}
@@ -11856,10 +11891,11 @@ RectTransform:
   - {fileID: 1360159270}
   - {fileID: 1010844117}
   - {fileID: 418022321}
-  - {fileID: 1610847137}
   - {fileID: 276211877}
   - {fileID: 1098091238}
   - {fileID: 1173067633}
+  - {fileID: 1610847137}
+  - {fileID: 1537660040}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -13802,6 +13838,81 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 7c1220694be066d419ac400c45b70919, type: 3}
+--- !u!1 &1537660039
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1537660040}
+  - component: {fileID: 1537660042}
+  - component: {fileID: 1537660041}
+  m_Layer: 5
+  m_Name: AimPoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1537660040
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1537660039}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1163994727}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 10, y: 10}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1537660041
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1537660039}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 0
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &1537660042
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1537660039}
+  m_CullTransparentMesh: 1
 --- !u!1 &1567984910 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: fe1daa015c6db8a4eae29da29e70e946, type: 3}
@@ -14002,7 +14113,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1610847137
 RectTransform:
   m_ObjectHideFlags: 0
@@ -15682,11 +15793,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RitualActivator
   inputReader: {fileID: 570600791}
-  interactionPromptText: {fileID: 1360159271}
+  playerCamera: {fileID: 1571217752}
   targetRitualScript: {fileID: 1737947431}
-  interactionPrompts:
-  - "\u043E\u0442\u043A\u0440\u044B\u0442\u044C \u0448\u043A\u0430\u0444"
-  - "\u043D\u0430\u0432\u0435\u0441\u0442\u0438 \u0442\u0443\u0442 \u043F\u043E\u0440\u044F\u0434\u043E\u043A"
+  interactDistance: 1.5
+  interactionPromptText: {fileID: 1360159271}
+  interactionPrompts: []
+  crosshairImage: {fileID: 1537660041}
+  normalScale: 1
+  activeScale: 2
+  crosshairAnimSpeed: 15
+  normalColor: {r: 1, g: 1, b: 1, a: 0.5}
+  activeColor: {r: 0.26022384, g: 0.7169812, b: 0.043965846, a: 1}
+  onInteractEvent:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!65 &1992172317
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -15706,7 +15826,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
+  m_Size: {x: 0.5, y: 1.2, z: 0.7}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!4 &1992172318
 Transform:
@@ -15717,7 +15837,7 @@ Transform:
   m_GameObject: {fileID: 1992172315}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.892, y: -0.28, z: 0.085}
+  m_LocalPosition: {x: -0.892, y: 0.01, z: 0.085}
   m_LocalScale: {x: 2, y: 2, z: 2}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -16223,10 +16343,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RitualActivator
   inputReader: {fileID: 570600791}
-  interactionPromptText: {fileID: 1360159271}
+  playerCamera: {fileID: 1571217752}
   targetRitualScript: {fileID: 1488575832}
-  interactionPrompts:
-  - "\u041F\u043E\u043B\u0438\u0442\u044C \u0426\u0432\u0435\u0442\u043E\u043A"
+  interactDistance: 1.5
+  interactionPromptText: {fileID: 1360159271}
+  interactionPrompts: []
+  crosshairImage: {fileID: 1537660041}
+  normalScale: 1
+  activeScale: 2
+  crosshairAnimSpeed: 15
+  normalColor: {r: 1, g: 1, b: 1, a: 0.5}
+  activeColor: {r: 0.32541087, g: 0.6792453, b: 0.06087574, a: 1}
+  onInteractEvent:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!65 &2069520726
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -16246,7 +16376,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
+  m_Size: {x: 0.2, y: 0.4, z: 0.2}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!4 &2069520727
 Transform:
@@ -16257,7 +16387,7 @@ Transform:
   m_GameObject: {fileID: 2069520724}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.381, y: 0.227, z: 0.537}
+  m_LocalPosition: {x: 0.381, y: -0.066, z: 0.401}
   m_LocalScale: {x: 2, y: 2, z: 2}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -16725,7 +16855,7 @@ Transform:
   m_GameObject: {fileID: 2128400692}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 2.206, y: 1.767, z: 1.922}
+  m_LocalPosition: {x: 2.19, y: 1.767, z: 1.922}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -16766,10 +16896,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RitualActivator
   inputReader: {fileID: 570600791}
-  interactionPromptText: {fileID: 1360159271}
+  playerCamera: {fileID: 1571217752}
   targetRitualScript: {fileID: 2128400696}
-  interactionPrompts:
-  - "\u043F\u043E\u043C\u044B\u0442\u044C \u043F\u043E\u0441\u0443\u0434\u0443"
+  interactDistance: 1.5
+  interactionPromptText: {fileID: 1360159271}
+  interactionPrompts: []
+  crosshairImage: {fileID: 1537660041}
+  normalScale: 1
+  activeScale: 2
+  crosshairAnimSpeed: 15
+  normalColor: {r: 1, g: 1, b: 1, a: 0.5}
+  activeColor: {r: 0.22375585, g: 0.6037736, b: 0.054111768, a: 1}
+  onInteractEvent:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!114 &2128400696
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -16821,7 +16961,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 2, y: 2, z: 2}
+  m_Size: {x: 0.5, y: 0.5, z: 0.5}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!1001 &5126529675276410284
 PrefabInstance:

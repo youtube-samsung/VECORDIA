@@ -20,8 +20,7 @@ public class CutsceneTrigger : MonoBehaviour
 
     private void Update()
     {
-        // ПРОВЕРКА НАЖАТИЯ ЧЕРЕЗ NEW INPUT SYSTEM
-        // Проверяем, что клавиатура вообще подключена, и нажата ли клавиша E
+
         if (isPlayerInZone && !hasPlayed && Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame)
         {
             hasPlayed = true;
