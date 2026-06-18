@@ -4,6 +4,7 @@ public class ClothingItem : MonoBehaviour
 {
     public ClothingItemData data;
     public int currentHangerIndex = -1;
+    public int clothingID;
 
     public void Initialize()
     {
