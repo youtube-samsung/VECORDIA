@@ -19,6 +19,7 @@ public class InputReader : MonoBehaviour
     [SerializeField] private InputActionReference _ritualPointAction;
     [SerializeField] private InputActionReference _ritualInteractAction;
 
+
     public Vector2 MoveValue { get; private set; }
     public Vector2 LookValue { get; private set; }
     public Vector2 RitualLookValue { get; private set; }
@@ -34,6 +35,8 @@ public class InputReader : MonoBehaviour
     public System.Action OnUnpausePerformed;
     public System.Action OnInteractPerformed;
     public System.Action OnRitualClickPerformed;
+    public System.Action OnRitualInteractPerformed;
+
 
     private PlayerInput _playerInput;
 
@@ -64,6 +67,8 @@ public class InputReader : MonoBehaviour
         _ritualPointAction.action.performed += ctx => RitualPointValue = ctx.ReadValue<Vector2>();
 
         _ritualInteractAction.action.performed += ctx => OnInteractPerformed?.Invoke();
+        _ritualInteractAction.action.performed += ctx => OnRitualInteractPerformed?.Invoke();
+
     }
 
     private void OnEnable()
@@ -79,6 +84,7 @@ public class InputReader : MonoBehaviour
         _ritualLookAction.action.Enable();
         _ritualPointAction.action.Enable();
         _ritualInteractAction.action.Enable();
+
     }
 
     private void OnDisable()

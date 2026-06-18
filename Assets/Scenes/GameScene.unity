@@ -4031,6 +4031,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 801339531}
+  - component: {fileID: 801339532}
   m_Layer: 0
   m_Name: REspawn
   m_TagString: Untagged
@@ -4053,6 +4054,27 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
+--- !u!114 &801339532
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 801339530}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9855f79d90acf7945ac15d329b1dd57a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeathTransitionController
+  playerCamera: {fileID: 1571217752}
+  playerController: {fileID: 358417535}
+  inputReader: {fileID: 570600791}
+  placeholderHands: {fileID: 1173067630}
+  screamerSound: {fileID: 11400000, guid: f31d1f9498015cb4c852a4b0457689b2, type: 2}
+  fallDuration: 3
+  floorHeightOffset: 0.2
+  wakeUpCutscenes:
+  - {fileID: 1362462085}
 --- !u!1 &806382554
 GameObject:
   m_ObjectHideFlags: 0
@@ -4758,7 +4780,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 61bf3a7cadc10db4ba73ea2402e07ec9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CutsceneManager
-  playOnStart: 0
+  playOnStart: 1
   steps:
   - stepName: WakeUp1
     lookTarget: {fileID: 0}
@@ -11837,6 +11859,7 @@ RectTransform:
   - {fileID: 1610847137}
   - {fileID: 276211877}
   - {fileID: 1098091238}
+  - {fileID: 1173067633}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -11889,6 +11912,81 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.00048876693, y: 0.006829737, z: 0.0065984842}
   m_Center: {x: -0.00006603725, y: 0.00032113725, z: -0.000433265}
+--- !u!1 &1173067630
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1173067633}
+  - component: {fileID: 1173067632}
+  - component: {fileID: 1173067631}
+  m_Layer: 5
+  m_Name: scaryhand
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!114 &1173067631
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1173067630}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 0, g: 0, b: 0, a: 0.7607843}
+  m_RaycastTarget: 0
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 21300000, guid: 42cf12f3ca3393f47b519347804404ac, type: 3}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &1173067632
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1173067630}
+  m_CullTransparentMesh: 1
+--- !u!224 &1173067633
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1173067630}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 2}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1163994727}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 717, y: -116}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1195447174
 GameObject:
   m_ObjectHideFlags: 0
@@ -12654,7 +12752,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e810212de9d27444b9b1105887c06643, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TimeManager
-  totalLoopDuration: 420
+  totalLoopDuration: 60
 --- !u!4 &1306652039
 Transform:
   m_ObjectHideFlags: 0
@@ -13054,6 +13152,95 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1360159269}
   m_CullTransparentMesh: 1
+--- !u!1 &1362462083
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1362462084}
+  - component: {fileID: 1362462085}
+  m_Layer: 0
+  m_Name: Cutscene_AfterDeath
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1362462084
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1362462083}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1436983413}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1362462085
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1362462083}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 61bf3a7cadc10db4ba73ea2402e07ec9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CutsceneManager
+  playOnStart: 0
+  steps:
+  - stepName: BlackscreenOFF
+    lookTarget: {fileID: 0}
+    rotationDuration: 0
+    rotationCurve:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 0
+      m_PostInfinity: 0
+      m_RotationOrder: 0
+    changeFOV: 0
+    targetFOV: 0
+    fovDuration: 0
+    resetFovAfter: 0
+    thought: {fileID: 11400000, guid: 4f34bed22ccf157498216f676ba59dab, type: 2}
+    sound: {fileID: 0}
+    waitTimeAfter: 0
+    restoreControl: 0
+    doFade: 1
+    targetAlpha: 0
+    fadeDuration: 2
+  - stepName: BlackscreenOFF2
+    lookTarget: {fileID: 1783960872}
+    rotationDuration: 1
+    rotationCurve:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 0
+      m_PostInfinity: 0
+      m_RotationOrder: 0
+    changeFOV: 0
+    targetFOV: 0
+    fovDuration: 0
+    resetFovAfter: 0
+    thought: {fileID: 0}
+    sound: {fileID: 0}
+    waitTimeAfter: 1
+    restoreControl: 1
+    doFade: 0
+    targetAlpha: 0
+    fadeDuration: 0
+  OnFinished:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &1372011909
 GameObject:
   m_ObjectHideFlags: 0
@@ -13270,6 +13457,7 @@ Transform:
   m_Children:
   - {fileID: 926179496}
   - {fileID: 1944011961}
+  - {fileID: 1362462084}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1475276168
@@ -13814,7 +14002,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1610847137
 RectTransform:
   m_ObjectHideFlags: 0
@@ -14436,6 +14624,11 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1759845063}
   m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!4 &1783960872 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5170061281443735454, guid: 5afd3388600efb64495792741d037ba2, type: 3}
+  m_PrefabInstance: {fileID: 5126529675276410284}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1794838283
 GameObject:
   m_ObjectHideFlags: 0

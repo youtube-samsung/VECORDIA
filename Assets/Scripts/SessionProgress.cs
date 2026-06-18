@@ -1,14 +1,22 @@
 using System.Collections.Generic;
+using UnityEngine;
 
 public static class SessionProgress
 {
     public static int loopCount = 0;
 
-    public static List<float> cucumberMarksX = new List<float>();
+
+    public struct ScarData
+    {
+        public Vector3 position;
+        public float missFactor; 
+    }
+
+    public static List<ScarData> cucumberScars = new List<ScarData>();
 
     public static void ResetSession()
     {
         loopCount = 0;
-        cucumberMarksX.Clear();
+        cucumberScars.Clear();
     }
 }

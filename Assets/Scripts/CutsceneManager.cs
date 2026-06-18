@@ -20,6 +20,11 @@ public class CutsceneManager : MonoBehaviour
     {
         StartCoroutine(ExecuteRoutine());
     }
+    public IEnumerator PlayRoutine()
+    {
+        // ѕозвол€ет другим корутинам ждать, пока катсцена не завершитс€ полностью
+        yield return StartCoroutine(ExecuteRoutine());
+    }
 
     private IEnumerator ExecuteRoutine()
     {

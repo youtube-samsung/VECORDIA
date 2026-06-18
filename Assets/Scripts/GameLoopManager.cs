@@ -57,10 +57,8 @@ public class GameLoopManager : MonoBehaviour
         _isLoopEnding = true;
 
         SessionProgress.loopCount++;
-        TimeManager.Instance.StopTimer();
 
         OnDeathScreamerRequested?.Invoke();
-        StartCoroutine(SeamlessRestartRoutine());
     }
 
     private void Win()
@@ -83,7 +81,7 @@ public class GameLoopManager : MonoBehaviour
             yield return CinematicController.Instance.FadeRoutine(0f, 0.5f);
     }
 
-    private void StartNewLoop()
+    public void StartNewLoop()
     {
         _isLoopEnding = false;
         _completedRituals = 0;
@@ -100,7 +98,6 @@ public class GameLoopManager : MonoBehaviour
         }
 
         AnxietyManager.Instance.ResetAnxiety();
-        TimeManager.Instance.StartTimer();
 
         OnLoopReset?.Invoke();
     }

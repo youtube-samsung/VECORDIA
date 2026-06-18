@@ -66,6 +66,7 @@ public class FirstPersonController : MonoBehaviour
 
     private void Update()
     {
+        if (!GetComponent<CharacterController>().enabled) return;
         if (Time.timeScale == 0f)
         {
             return; 
