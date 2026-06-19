@@ -5,6 +5,17 @@ using UnityEngine;
 
 public class ClosetRitualController : MonoBehaviour, IRitualController
 {
+    [System.Serializable]
+    public struct ClosetDifficultyTier
+    {
+        [Tooltip("Верхний порог тревожности (например, 30)")]
+        public float maxAnxiety;
+        [Tooltip("Сколько лишних ходов прощается при этой тревоге")]
+        public int extraSwaps;
+        [Tooltip("Thought Data, которая вызовется при входе")]
+        public ThoughtData enterThought;
+    }
+
     [Header("Ссылки")]
     public RitualCameraHandler cameraHandler;
     public RitualActivator ritualActivator;
@@ -19,14 +30,22 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
 
     [Header("Настройки дверей")]
     public float doorOpenDuration = 0.5f;
+    [Tooltip("Целевой угол оси Y для левой двери. Например, -90.")]
     public float leftDoorOpenTargetAngle = -90f;
+    [Tooltip("Целевой угол оси Y для правой двери. Например, 90.")]
     public float rightDoorOpenTargetAngle = 90f;
 
     [Header("Настройки перетаскивания")]
     public float snapDistance = 0.5f;
 
-    [Header("Баланс тревоги")]
+    [Header("Слои")]
+    [Tooltip("Выбери здесь слой, на котором находятся футболки, чтобы мышь не цепляла шкаф")]
+    public LayerMask clothingLayer;
+
+    [Header("Сложность и Субтитры")]
     public float extraSwapPenalty = 3f;
+    [Tooltip("Настрой стадии тревоги. От меньшей к большей!")]
+    public ClosetDifficultyTier[] difficultyTiers;
 
     private bool _isRitualActive = false;
     public bool IsRitualActive => _isRitualActive;
@@ -40,6 +59,9 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
 
     private int _minimumRequiredSwaps = 0;
     private int _currentSwapsMade = 0;
+
+    private Quaternion closedRotationLeft;
+    private Quaternion closedRotationRight;
 
     private void OnEnable()
     {
@@ -60,6 +82,10 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
 
     private void Start()
     {
+        // ЗАПОМИНАЕМ ИДЕАЛЬНЫЕ УГЛЫ ДВЕРЕЙ ИЗ РЕДАКТОРА
+        if (doorLeft != null) closedRotationLeft = doorLeft.localRotation;
+        if (doorRight != null) closedRotationRight = doorRight.localRotation;
+
         for (int i = 0; i < clothes.Length; i++)
         {
             if (clothes[i] != null) clothes[i].clothingID = i;
@@ -79,8 +105,6 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
         foreach (var item in shuffledForLoop)
         {
             SessionProgress.correctClosetOrder.Add(item.clothingID);
-
-            // Если Data есть, берем цвет оттуда. Иначе ставим белый.
             Color itemColor = item.data != null ? item.data.itemColor : Color.white;
             SessionProgress.correctClosetColors.Add(itemColor);
         }
@@ -138,20 +162,24 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
         return n - cycles;
     }
 
-    private int GetAnxietyLeeway()
+    private ClosetDifficultyTier GetCurrentTier()
     {
-        if (AnxietyManager.Instance == null) return 4;
+        if (AnxietyManager.Instance == null || difficultyTiers == null || difficultyTiers.Length == 0)
+            return new ClosetDifficultyTier { extraSwaps = 4 };
 
-        float anxiety = AnxietyManager.Instance.CurrentTotalAnxiety;
+        float currentAnxiety = AnxietyManager.Instance.CurrentTotalAnxiety;
 
-        if (anxiety < 30f) return 6;
-        else if (anxiety < 70f) return 3;
-        else return 1;
+        foreach (var tier in difficultyTiers)
+        {
+            if (currentAnxiety < tier.maxAnxiety)
+                return tier;
+        }
+
+        return difficultyTiers[difficultyTiers.Length - 1];
     }
 
     public void Interact(int stage)
     {
-        // Теперь проверяем только двери, игнорируем сырую цифру стадии
         if (!areDoorsOpen) OpenDoors();
         else StartRitual();
     }
@@ -170,8 +198,13 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
         Quaternion startRotationLeft = doorLeft.localRotation;
         Quaternion startRotationRight = doorRight.localRotation;
 
-        Quaternion targetRotationLeft = Quaternion.Euler(doorLeft.localRotation.eulerAngles.x, opening ? leftDoorOpenTargetAngle : 0f, doorLeft.localRotation.eulerAngles.z);
-        Quaternion targetRotationRight = Quaternion.Euler(doorRight.localRotation.eulerAngles.x, opening ? rightDoorOpenTargetAngle : 0f, doorRight.localRotation.eulerAngles.z);
+        Quaternion targetRotationLeft = opening ?
+            Quaternion.Euler(doorLeft.localRotation.eulerAngles.x, leftDoorOpenTargetAngle, doorLeft.localRotation.eulerAngles.z) :
+            closedRotationLeft;
+
+        Quaternion targetRotationRight = opening ?
+            Quaternion.Euler(doorRight.localRotation.eulerAngles.x, rightDoorOpenTargetAngle, doorRight.localRotation.eulerAngles.z) :
+            closedRotationRight;
 
         float timeElapsed = 0;
         while (timeElapsed < doorOpenDuration)
@@ -198,9 +231,14 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
 
         if (inputReader != null) inputReader.SwitchToRitual();
 
-        // Освобождаем мышь для перетаскивания одежды
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;
+
+        ClosetDifficultyTier currentTier = GetCurrentTier();
+        if (currentTier.enterThought != null && SubtitleManager.Instance != null)
+        {
+            SubtitleManager.Instance.ShowThought(currentTier.enterThought);
+        }
 
         StartCoroutine(EnableRitualInputDelayed());
     }
@@ -231,7 +269,8 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
         if (currentlyDraggedItem == null)
         {
             Ray ray = cameraHandler.playerCamera.ScreenPointToRay(inputReader.RitualPointValue);
-            if (Physics.Raycast(ray, out RaycastHit hit, 5f))
+
+            if (Physics.Raycast(ray, out RaycastHit hit, 5f, clothingLayer))
             {
                 ClothingItem item = hit.transform.GetComponentInParent<ClothingItem>();
                 if (item != null)
@@ -280,7 +319,7 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
 
                     _currentSwapsMade++;
 
-                    int currentThreshold = _minimumRequiredSwaps + GetAnxietyLeeway();
+                    int currentThreshold = _minimumRequiredSwaps + GetCurrentTier().extraSwaps;
 
                     if (_currentSwapsMade > currentThreshold)
                     {
@@ -309,35 +348,19 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
         bool allHangersFilled = clothes.All(c => c.currentHangerIndex >= 0 && c.currentHangerIndex < hangers.Length);
         if (!allHangersFilled) return;
 
-        bool isSortedCorrectly = true;
-        string debugLog = "--- ОТЧЕТ ПО СБОРКЕ ШКАФА ---\n";
-
         foreach (var item in clothes)
         {
             int requiredHanger = SessionProgress.correctClosetOrder.IndexOf(item.clothingID);
-            string itemName = item.data != null ? item.data.itemName : "Без_Имени";
 
             if (item.currentHangerIndex != requiredHanger)
             {
-                isSortedCorrectly = false;
-                debugLog += $"[ОШИБКА] Футболка '{itemName}' (ID {item.clothingID}): висит на вешалке {item.currentHangerIndex}, а ДОЛЖНА на {requiredHanger}\n";
-            }
-            else
-            {
-                debugLog += $"[ОК] Футболка '{itemName}' (ID {item.clothingID}): верно висит на вешалке {item.currentHangerIndex}\n";
+                return; 
             }
         }
 
-        if (isSortedCorrectly)
-        {
-            Debug.Log(debugLog + "ИТОГ: РИТУАЛ УСПЕШНО ЗАВЕРШЕН!");
-            if (GameLoopManager.Instance != null) GameLoopManager.Instance.RegisterRitualComplete();
-            EndRitual();
-        }
-        else
-        {
-            Debug.LogWarning(debugLog + "ИТОГ: Комбинация не совпала.");
-        }
+
+        if (GameLoopManager.Instance != null) GameLoopManager.Instance.RegisterRitualComplete();
+        EndRitual();
     }
 
     public void EndRitual()
@@ -353,7 +376,6 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
 
         if (cameraHandler != null) cameraHandler.ExitRitualMode();
 
-        // Синхронизируем активатор: если двери открыты, оставляем 1 стадию
         if (ritualActivator != null)
         {
             ritualActivator.RitualFinished();
@@ -365,7 +387,6 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
 
         if (inputReader != null) inputReader.SwitchToGameplay();
 
-        // Блокируем и прячем мышь обратно
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
     }
@@ -381,8 +402,9 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
 
         areDoorsOpen = false;
         if (doorAnimationCoroutine != null) StopCoroutine(doorAnimationCoroutine);
-        doorLeft.localRotation = Quaternion.identity;
-        doorRight.localRotation = Quaternion.identity;
+
+        if (doorLeft != null) doorLeft.localRotation = closedRotationLeft;
+        if (doorRight != null) doorRight.localRotation = closedRotationRight;
 
         GenerateCorrectLoopOrder();
         InitializeClothesRandomly();

@@ -106,7 +106,7 @@ public class GameLoopManager : MonoBehaviour
     {
         int startMinutesTotal = 22 * 60 + 53;
 
-        // currentAnxiety уже в формате 0-100. Делим на 100, чтобы получить процент от 7 минут.
+
         float minutesPassed = (currentAnxiety / 100f) * 7f;
         int currentMinutesTotal = startMinutesTotal + Mathf.FloorToInt(minutesPassed);
 

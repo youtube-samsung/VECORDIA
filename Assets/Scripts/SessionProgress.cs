@@ -4,17 +4,18 @@ using UnityEngine;
 public static class SessionProgress
 {
     public static int loopCount = 0;
-
-
-    public struct ScarData
-    {
-        public Vector3 position;
-        public float missFactor; 
-    }
-
-    public static List<ScarData> cucumberScars = new List<ScarData>();
+    public static List<CucumberScarData> cucumberScars = new List<CucumberScarData>();
     public static List<int> correctClosetOrder = new List<int>();
     public static List<Color> correctClosetColors = new List<Color>();
+    [System.Serializable]
+    public struct CucumberScarData
+    {
+        public Vector3 localPosition;
+        public float missFactor;
+    }
+
+
+
 
     public static void ResetSession()
     {

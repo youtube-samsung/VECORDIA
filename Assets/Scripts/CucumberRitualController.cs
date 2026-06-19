@@ -128,7 +128,7 @@ public class CucumberRitualController : MonoBehaviour, IRitualController
         if (inputReader != null)
         {
             inputReader.OnRitualClickPerformed += OnRitualClick;
-            inputReader.OnRitualInteractPerformed += EndRitual; // Подписка на кнопку выхода
+            inputReader.OnRitualInteractPerformed += EndRitual;
         }
 
         ToggleRitualObjects(true);
@@ -264,38 +264,49 @@ public class CucumberRitualController : MonoBehaviour, IRitualController
                 new Vector2(targetCutPoint.position.x, targetCutPoint.position.z)
             );
 
-            // СЛИШКОМ ДАЛЕКО
+            // Находим контроллер доски на сцене для регистрации шрамов
+            CucumberBoardController boardController = Object.FindFirstObjectByType<CucumberBoardController>();
+
+            // 1. КРИТИЧЕСКИЙ ПРОМАХ (Слишком далеко от точки реза)
             if (distanceToTarget > maxCutDistance)
             {
                 if (AudioManager.Instance != null && knifeMissSound != null)
                     AudioManager.Instance.PlaySound3D(knifeMissSound, knifeObject.transform.position);
 
-                SessionProgress.cucumberScars.Add(new SessionProgress.ScarData { position = hit.point, missFactor = 1f });
+                // Регистрируем шрам на доске (при сильном промахе передаем мисс-фактор = 1, шрам будет минимальным)
+                if (boardController != null)
+                {
+                    boardController.RegisterNewScar(hit.point, 1f);
+                }
 
                 if (AnxietyManager.Instance != null)
                     AnxietyManager.Instance.AddPenalty(failAnxietyPenalty);
 
-                return; // Выходим из метода нарезки, но остаемся в ритуале
+                return;
             }
 
-            // УСПЕШНЫЙ СРЕЗ
+            // 2. УСПЕШНЫЙ / НЕТОЧНЫЙ СРЕЗ (Попали в допустимый диапазон)
             if (AudioManager.Instance != null && sliceSound != null)
                 AudioManager.Instance.PlaySound3D(sliceSound, knifeObject.transform.position);
 
             float missFactor = Mathf.InverseLerp(0, maxCutDistance, distanceToTarget);
-            if (missFactor > 0)
-            {
-                SessionProgress.cucumberScars.Add(new SessionProgress.ScarData { position = hit.point, missFactor = missFactor });
 
-                if (AnxietyManager.Instance != null)
-                    AnxietyManager.Instance.AddPenalty(missFactor * anxietyPenaltyMultiplier);
+            // Оставляем шрам в любом случае, даже если срез идеальный
+            if (boardController != null)
+            {
+                boardController.RegisterNewScar(hit.point, missFactor);
+            }
+
+            if (missFactor > 0 && AnxietyManager.Instance != null)
+            {
+                AnxietyManager.Instance.AddPenalty(missFactor * anxietyPenaltyMultiplier);
             }
 
             PerformCut();
         }
         else
         {
-            // УДАР МИМО ДОСКИ
+            // 3. УДАР ВООБЩЕ МИМО ДОСКИ
             if (AudioManager.Instance != null && knifeMissSound != null)
                 AudioManager.Instance.PlaySound3D(knifeMissSound, knifeObject.transform.position);
 
@@ -308,6 +319,7 @@ public class CucumberRitualController : MonoBehaviour, IRitualController
     {
         if (cucumberStages.Length > currentStageIndex && cucumberStages[currentStageIndex] != null)
         {
+            // Физическое отделение старого куска
             Rigidbody oldSlice = cucumberStages[currentStageIndex].GetComponentInChildren<Rigidbody>();
             if (oldSlice != null) oldSlice.transform.SetParent(null);
             cucumberStages[currentStageIndex].SetActive(false);
@@ -348,7 +360,6 @@ public class CucumberRitualController : MonoBehaviour, IRitualController
         if (inputReader != null) inputReader.SwitchToRitual();
     }
 
-    // ОБЫЧНЫЙ ВЫХОД (Прогресс нарезки сохраняется)
     public void EndRitual()
     {
         if (!_isRitualActive) return;
@@ -365,7 +376,8 @@ public class CucumberRitualController : MonoBehaviour, IRitualController
         if (knifeObject != null)
             knifeObject.transform.localPosition = initialKnifeLocalPos;
 
-        if (cutLightMarker != null) cutLightMarker.gameObject.SetActive(false);
+        if (cutLightMarker != null)
+            cutLightMarker.gameObject.SetActive(false);
 
         ToggleRitualObjects(false);
         if (cameraHandler != null) cameraHandler.ExitRitualMode();
@@ -375,7 +387,6 @@ public class CucumberRitualController : MonoBehaviour, IRitualController
         Cursor.lockState = CursorLockMode.None;
     }
 
-    // СБРОС МИРА (При смерти)
     private void ResetRitualGlobal()
     {
         if (_isRitualActive) EndRitual();

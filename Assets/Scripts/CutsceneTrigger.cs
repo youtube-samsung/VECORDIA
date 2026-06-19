@@ -1,5 +1,5 @@
 using UnityEngine;
-using UnityEngine.InputSystem; // Обязательно добавляем эту библиотеку!
+using UnityEngine.InputSystem; 
 
 [RequireComponent(typeof(Collider))]
 public class CutsceneTrigger : MonoBehaviour

@@ -1,6 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.Events; // ќЅя«ј“≈Ћ№Ќќ: добавл€ем дл€ работы с событи€ми
+using UnityEngine.Events; 
 using TMPro;
 
 public class RitualActivator : MonoBehaviour
