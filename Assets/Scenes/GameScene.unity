@@ -2219,7 +2219,7 @@ Transform:
   m_GameObject: {fileID: 358417533}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: -6.407, y: 1.474, z: -5.912}
+  m_LocalPosition: {x: -6.501, y: 1.573, z: -5.912}
   m_LocalScale: {x: 0.5, y: 0.8, z: 0.5}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -5176,7 +5176,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 61bf3a7cadc10db4ba73ea2402e07ec9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CutsceneManager
-  playOnStart: 0
+  playOnStart: 1
   steps:
   - stepName: WakeUp1
     lookTarget: {fileID: 0}
@@ -14901,7 +14901,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1610847137
 RectTransform:
   m_ObjectHideFlags: 0

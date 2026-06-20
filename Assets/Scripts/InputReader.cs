@@ -18,14 +18,27 @@ public class InputReader : MonoBehaviour
     [SerializeField] private InputActionReference _ritualPointAction;
     [SerializeField] private InputActionReference _ritualInteractAction;
 
-    public Vector2 MoveValue { get; private set; }
-    public Vector2 LookValue { get; private set; }
-    public Vector2 RitualLookValue { get; private set; }
+    private PlayerInput _playerInput;
+
+    // Кэшируем конкретные экземпляры экшенов по их уникальным ID
+    private InputAction moveAction;
+    private InputAction lookAction;
+    private InputAction ritualLookAction;
+    private InputAction ritualPointAction;
+
+    // НЕПРЕРЫВНЫЕ ЗНАЧЕНИЯ (Опрос в реальном времени через свойства)
+    // Больше никаких зависаний и нулей: данные берутся напрямую из активной карты по требованию
+    public Vector2 MoveValue => moveAction != null ? moveAction.ReadValue<Vector2>() : Vector2.zero;
+    public Vector2 LookValue => lookAction != null ? lookAction.ReadValue<Vector2>() : Vector2.zero;
+    public Vector2 RitualLookValue => ritualLookAction != null ? ritualLookAction.ReadValue<Vector2>() : Vector2.zero;
+    public Vector2 RitualPointValue => ritualPointAction != null ? ritualPointAction.ReadValue<Vector2>() : Vector2.zero;
+
+    // ФЛАГИ СОСТОЯНИЙ
     public bool JumpPressed { get; private set; }
     public bool IsSprinting { get; private set; }
-    public Vector2 RitualPointValue { get; private set; }
     public bool IsRitualClickHeld { get; private set; }
 
+    // СОБЫТИЯ ДЛЯ ДИСКРЕТНЫХ НАЖАТИЙ (Кнопок)
     public System.Action OnJumpPerformed;
     public System.Action OnPausePerformed;
     public System.Action OnUnpausePerformed;
@@ -33,59 +46,51 @@ public class InputReader : MonoBehaviour
     public System.Action OnRitualClickPerformed;
     public System.Action OnRitualInteractPerformed;
 
-    private PlayerInput _playerInput;
-
     private void Awake()
     {
         _playerInput = GetComponent<PlayerInput>();
 
-        // ПОЛУЧАЕМ ЛОКАЛЬНЫЕ ДЕЙСТВИЯ ИЗ PLAYER INPUT
-        // Теперь SwitchCurrentActionMap будет реально работать и отключать ненужные кнопки!
+        // НАХОДИМ СТРОГО СВОИ НАТИВНЫЕ ЭКШЕНЫ ПО GUID, ИГНОРИРУЯ СОВПАДЕНИЯ ИМЁН
+        moveAction = _playerInput.actions.FindAction(_moveAction.action.id);
+        lookAction = _playerInput.actions.FindAction(_lookAction.action.id);
+        ritualLookAction = _playerInput.actions.FindAction(_ritualLookAction.action.id);
+        ritualPointAction = _playerInput.actions.FindAction(_ritualPointAction.action.id);
 
-        var move = _playerInput.actions.FindAction(_moveAction.action.name);
-        move.performed += ctx => MoveValue = ctx.ReadValue<Vector2>();
-        move.canceled += ctx => MoveValue = Vector2.zero;
+        // ПОДПИСКИ НА КНОПКИ (Событийная модель тут оправдана на 100%)
+        var jump = _playerInput.actions.FindAction(_jumpAction.action.id);
+        if (jump != null)
+        {
+            jump.performed += ctx => { JumpPressed = true; OnJumpPerformed?.Invoke(); };
+            jump.canceled += ctx => JumpPressed = false;
+        }
 
-        var look = _playerInput.actions.FindAction(_lookAction.action.name);
-        look.performed += ctx => LookValue = ctx.ReadValue<Vector2>();
-        look.canceled += ctx => LookValue = Vector2.zero;
+        var sprint = _playerInput.actions.FindAction(_sprintAction.action.id);
+        if (sprint != null)
+        {
+            sprint.performed += ctx => IsSprinting = true;
+            sprint.canceled += ctx => IsSprinting = false;
+        }
 
-        var jump = _playerInput.actions.FindAction(_jumpAction.action.name);
-        jump.performed += ctx => { JumpPressed = true; OnJumpPerformed?.Invoke(); };
-        jump.canceled += ctx => JumpPressed = false;
+        var pause = _playerInput.actions.FindAction(_pauseAction.action.id);
+        if (pause != null) pause.performed += ctx => OnPausePerformed?.Invoke();
 
-        var sprint = _playerInput.actions.FindAction(_sprintAction.action.name);
-        sprint.performed += ctx => IsSprinting = true;
-        sprint.canceled += ctx => IsSprinting = false;
+        var interact = _playerInput.actions.FindAction(_interactAction.action.id);
+        if (interact != null) interact.performed += ctx => OnInteractPerformed?.Invoke();
 
-        var pause = _playerInput.actions.FindAction(_pauseAction.action.name);
-        pause.performed += ctx => OnPausePerformed?.Invoke();
+        var unpause = _playerInput.actions.FindAction(_unpauseAction.action.id);
+        if (unpause != null) unpause.performed += ctx => OnUnpausePerformed?.Invoke();
 
-        var interact = _playerInput.actions.FindAction(_interactAction.action.name);
-        interact.performed += ctx => OnInteractPerformed?.Invoke();
+        var ritualClick = _playerInput.actions.FindAction(_ritualClickAction.action.id);
+        if (ritualClick != null)
+        {
+            ritualClick.performed += ctx => OnRitualClickPerformed?.Invoke();
+            ritualClick.started += ctx => IsRitualClickHeld = true;
+            ritualClick.canceled += ctx => IsRitualClickHeld = false;
+        }
 
-        var unpause = _playerInput.actions.FindAction(_unpauseAction.action.name);
-        unpause.performed += ctx => OnUnpausePerformed?.Invoke();
-
-        var ritualClick = _playerInput.actions.FindAction(_ritualClickAction.action.name);
-        ritualClick.performed += ctx => OnRitualClickPerformed?.Invoke();
-        ritualClick.started += ctx => IsRitualClickHeld = true;
-        ritualClick.canceled += ctx => IsRitualClickHeld = false;
-
-        var ritualLook = _playerInput.actions.FindAction(_ritualLookAction.action.name);
-        ritualLook.performed += ctx => RitualLookValue = ctx.ReadValue<Vector2>();
-        ritualLook.canceled += ctx => RitualLookValue = Vector2.zero;
-
-        var ritualPoint = _playerInput.actions.FindAction(_ritualPointAction.action.name);
-        ritualPoint.performed += ctx => RitualPointValue = ctx.ReadValue<Vector2>();
-
-        var ritualInteract = _playerInput.actions.FindAction(_ritualInteractAction.action.name);
-        // ОШИБКА ДВОЙНОГО ВЫЗОВА ИСПРАВЛЕНА: Теперь здесь только выход из ритуала
-        ritualInteract.performed += ctx => OnRitualInteractPerformed?.Invoke();
+        var ritualInteract = _playerInput.actions.FindAction(_ritualInteractAction.action.id);
+        if (ritualInteract != null) ritualInteract.performed += ctx => OnRitualInteractPerformed?.Invoke();
     }
-
-    // ВНИМАНИЕ: Методы OnEnable и OnDisable полностью удалены!
-    // PlayerInput сам автоматически включает нужную карту и выключает остальные.
 
     public void SwitchToGameplay()
     {

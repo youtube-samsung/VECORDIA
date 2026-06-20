@@ -8,11 +8,8 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
     [System.Serializable]
     public struct ClosetDifficultyTier
     {
-        [Tooltip("Верхний порог тревожности (например, 30)")]
         public float maxAnxiety;
-        [Tooltip("Сколько лишних ходов прощается при этой тревоге")]
         public int extraSwaps;
-        [Tooltip("Thought Data, которая вызовется при входе")]
         public ThoughtData enterThought;
     }
 
@@ -30,21 +27,15 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
 
     [Header("Настройки дверей")]
     public float doorOpenDuration = 0.5f;
-    [Tooltip("Целевой угол оси Y для левой двери. Например, -90.")]
     public float leftDoorOpenTargetAngle = -90f;
-    [Tooltip("Целевой угол оси Y для правой двери. Например, 90.")]
     public float rightDoorOpenTargetAngle = 90f;
 
     [Header("Настройки перетаскивания")]
     public float snapDistance = 0.5f;
-
-    [Header("Слои")]
-    [Tooltip("Выбери здесь слой, на котором находятся футболки, чтобы мышь не цепляла шкаф")]
     public LayerMask clothingLayer;
 
     [Header("Сложность и Субтитры")]
     public float extraSwapPenalty = 3f;
-    [Tooltip("Настрой стадии тревоги. От меньшей к большей!")]
     public ClosetDifficultyTier[] difficultyTiers;
 
     private bool _isRitualActive = false;
@@ -82,7 +73,6 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
 
     private void Start()
     {
-        // ЗАПОМИНАЕМ ИДЕАЛЬНЫЕ УГЛЫ ДВЕРЕЙ ИЗ РЕДАКТОРА
         if (doorLeft != null) closedRotationLeft = doorLeft.localRotation;
         if (doorRight != null) closedRotationRight = doorRight.localRotation;
 
@@ -108,7 +98,6 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
             Color itemColor = item.data != null ? item.data.itemColor : Color.white;
             SessionProgress.correctClosetColors.Add(itemColor);
         }
-        Debug.Log("[Шкаф] Сгенерирован новый правильный порядок и цвета для ванной!");
         OnClosetColorsReady?.Invoke();
     }
 
@@ -128,7 +117,6 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
 
         _currentSwapsMade = 0;
         _minimumRequiredSwaps = CalculateMinimumSwaps();
-        Debug.Log($"[Шкаф] Идеальное количество ходов для этой петли: {_minimumRequiredSwaps}");
     }
 
     private int CalculateMinimumSwaps()
@@ -226,6 +214,8 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
         if (_isRitualActive) return;
         _isRitualActive = true;
 
+        Debug.LogWarning("[Дебаг] Ритуал запущен. _isRitualActive = true");
+
         if (ritualActivator != null) ritualActivator.HidePrompt();
         if (cameraHandler != null) cameraHandler.EnterRitualMode(ritualCameraTarget);
 
@@ -251,6 +241,7 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
         {
             inputReader.OnRitualClickPerformed += OnDragStartOrEnd;
             inputReader.OnRitualInteractPerformed += EndRitual;
+            Debug.LogWarning("[Дебаг] Инпуты успешно подписаны после задержки.");
         }
     }
 
@@ -258,8 +249,11 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
     {
         if (!_isRitualActive || currentlyDraggedItem == null) return;
 
-        Ray ray = cameraHandler.playerCamera.ScreenPointToRay(inputReader.RitualPointValue);
-        currentlyDraggedItem.transform.position = ray.GetPoint(dragPlaneDistance) + dragOffset;
+        Vector2 mousePos = inputReader.RitualPointValue;
+        Ray ray = cameraHandler.playerCamera.ScreenPointToRay(mousePos);
+        Vector3 targetPos = ray.GetPoint(dragPlaneDistance) + dragOffset;
+
+        currentlyDraggedItem.transform.position = targetPos;
     }
 
     private void OnDragStartOrEnd()
@@ -268,7 +262,10 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
 
         if (currentlyDraggedItem == null)
         {
-            Ray ray = cameraHandler.playerCamera.ScreenPointToRay(inputReader.RitualPointValue);
+            Vector2 mousePos = inputReader.RitualPointValue;
+            Debug.LogWarning($"[Дебаг] Клик! Пытаемся ВЗЯТЬ вещь. Координаты мыши: {mousePos}");
+
+            Ray ray = cameraHandler.playerCamera.ScreenPointToRay(mousePos);
 
             if (Physics.Raycast(ray, out RaycastHit hit, 5f, clothingLayer))
             {
@@ -278,11 +275,21 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
                     currentlyDraggedItem = item;
                     dragPlaneDistance = Vector3.Dot(cameraHandler.playerCamera.transform.forward, currentlyDraggedItem.transform.position - cameraHandler.playerCamera.transform.position);
                     dragOffset = currentlyDraggedItem.transform.position - ray.GetPoint(dragPlaneDistance);
+                    Debug.LogWarning($"[Дебаг] ВЗЯЛИ: {item.name}. dragPlaneDistance: {dragPlaneDistance}");
                 }
+                else
+                {
+                    Debug.LogWarning($"[Дебаг] Луч попал в {hit.collider.name}, но скрипт ClothingItem не найден!");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("[Дебаг] Луч мимо одежды.");
             }
         }
         else
         {
+            Debug.LogWarning($"[Дебаг] Пытаемся ПОЛОЖИТЬ: {currentlyDraggedItem.name}");
             float closestDistance = float.MaxValue;
             int closestHangerIndex = -1;
 
@@ -316,14 +323,12 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
 
                     currentlyDraggedItem.transform.position = hangers[closestHangerIndex].position;
                     currentlyDraggedItem.currentHangerIndex = closestHangerIndex;
-
                     _currentSwapsMade++;
 
                     int currentThreshold = _minimumRequiredSwaps + GetCurrentTier().extraSwaps;
 
                     if (_currentSwapsMade > currentThreshold)
                     {
-                        Debug.Log($"[Шкаф] Лишнее движение! Ход {_currentSwapsMade} из порога {currentThreshold}");
                         if (AnxietyManager.Instance != null) AnxietyManager.Instance.AddPenalty(extraSwapPenalty);
                     }
                 }
@@ -343,6 +348,19 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
         }
     }
 
+    private void DropCurrentlyDraggedItem()
+    {
+        if (currentlyDraggedItem != null)
+        {
+            Debug.LogWarning($"[Дебаг] Экстренный сброс вещи: {currentlyDraggedItem.name}. Возвращаем на вешалку {currentlyDraggedItem.currentHangerIndex}");
+            if (currentlyDraggedItem.currentHangerIndex != -1 && currentlyDraggedItem.currentHangerIndex < hangers.Length)
+            {
+                currentlyDraggedItem.transform.position = hangers[currentlyDraggedItem.currentHangerIndex].position;
+            }
+            currentlyDraggedItem = null;
+        }
+    }
+
     private void CheckForCompletion()
     {
         bool allHangersFilled = clothes.All(c => c.currentHangerIndex >= 0 && c.currentHangerIndex < hangers.Length);
@@ -354,10 +372,9 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
 
             if (item.currentHangerIndex != requiredHanger)
             {
-                return; 
+                return;
             }
         }
-
 
         if (GameLoopManager.Instance != null) GameLoopManager.Instance.RegisterRitualComplete();
         EndRitual();
@@ -367,6 +384,10 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
     {
         if (!_isRitualActive) return;
         _isRitualActive = false;
+
+        Debug.LogWarning("[Дебаг] Вызван EndRitual(). Отключаем ритуал.");
+
+        DropCurrentlyDraggedItem();
 
         if (inputReader != null)
         {
@@ -393,11 +414,13 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
 
     private void ForceExitOnDeath()
     {
+        Debug.LogWarning("[Дебаг] Смерть! Вызван ForceExitOnDeath().");
         if (_isRitualActive) EndRitual();
     }
 
     private void ResetRitualGlobal()
     {
+        Debug.LogWarning("[Дебаг] Сброс лупа! ResetRitualGlobal()");
         if (_isRitualActive) EndRitual();
 
         areDoorsOpen = false;
