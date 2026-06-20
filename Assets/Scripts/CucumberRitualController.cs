@@ -16,6 +16,27 @@ public class CucumberRitualController : MonoBehaviour, IRitualController
     public GameObject[] cucumberStages;
     public GameObject[] cutPoints;
 
+    [Header("Финал Ритуала (Салат)")]
+    public Transform boardTransform;
+    public Collider boardCollider;
+    public PhysicsMaterial slipperyMaterial;
+
+    public GameObject emptyPlate;
+    public Transform emptyPlateTargetPos;
+    public GameObject fullSalad;
+
+    [Tooltip("На сколько поднимается доска вверх. Например: 0.15")]
+    public float boardLiftHeight = 0.15f;
+    [Tooltip("Укажи углы наклона по осям X, Y, Z.")]
+    public Vector3 boardTiltRotation = new Vector3(0f, 0f, 45f);
+    public float slideWaitTime = 2.5f;
+
+    [Header("Тайминги Финала (Анимация)")]
+    public float plateSlideDuration = 0.6f;
+    public float boardLiftDuration = 0.3f;
+    public float boardTiltDuration = 0.4f;
+    public float boardReturnDuration = 0.4f;
+
     [Header("Лазерный прицел")]
     public Light cutLightMarker;
     public float maxLightIntensity = 2f;
@@ -46,13 +67,18 @@ public class CucumberRitualController : MonoBehaviour, IRitualController
 
     private int currentStageIndex = 0;
     private bool _isRitualActive = false;
+    private bool _isRitualCompleted = false;
     public bool IsRitualActive => _isRitualActive;
 
     private bool canCut = false;
     private bool isAnimatingCut = false;
     private Vector3 initialKnifeLocalPos;
 
-    // --- ПАМЯТЬ ДЛЯ КУСОЧКОВ ---
+    private PhysicsMaterial originalBoardMaterial;
+    private Vector3 emptyPlateStartPos;
+    private Quaternion originalBoardRotation;
+    private Vector3 originalBoardPosition;
+
     private struct SliceMemory
     {
         public Transform transform;
@@ -90,7 +116,15 @@ public class CucumberRitualController : MonoBehaviour, IRitualController
             cutLightMarker.gameObject.SetActive(false);
         }
 
-        // ЗАПОМИНАЕМ ВСЕ КУСОЧКИ ОГУРЦА ПРИ СТАРТЕ СЦЕНЫ
+        if (boardTransform != null)
+        {
+            originalBoardRotation = boardTransform.localRotation;
+            originalBoardPosition = boardTransform.localPosition;
+        }
+        if (boardCollider != null) originalBoardMaterial = boardCollider.sharedMaterial;
+        if (emptyPlate != null) emptyPlateStartPos = emptyPlate.transform.position;
+        if (fullSalad != null) fullSalad.SetActive(false);
+
         foreach (GameObject stage in cucumberStages)
         {
             if (stage == null) continue;
@@ -111,13 +145,13 @@ public class CucumberRitualController : MonoBehaviour, IRitualController
 
     public void Interact(int stage)
     {
-        if (!_isRitualActive)
+        if (!_isRitualActive && !_isRitualCompleted)
             StartRitual();
     }
 
     public void StartRitual()
     {
-        if (_isRitualActive) return;
+        if (_isRitualActive || _isRitualCompleted) return;
 
         _isRitualActive = true;
         canCut = true;
@@ -264,16 +298,13 @@ public class CucumberRitualController : MonoBehaviour, IRitualController
                 new Vector2(targetCutPoint.position.x, targetCutPoint.position.z)
             );
 
-            // Находим контроллер доски на сцене для регистрации шрамов
             CucumberBoardController boardController = Object.FindFirstObjectByType<CucumberBoardController>();
 
-            // 1. КРИТИЧЕСКИЙ ПРОМАХ (Слишком далеко от точки реза)
             if (distanceToTarget > maxCutDistance)
             {
                 if (AudioManager.Instance != null && knifeMissSound != null)
                     AudioManager.Instance.PlaySound3D(knifeMissSound, knifeObject.transform.position);
 
-                // Регистрируем шрам на доске (при сильном промахе передаем мисс-фактор = 1, шрам будет минимальным)
                 if (boardController != null)
                 {
                     boardController.RegisterNewScar(hit.point, 1f);
@@ -285,13 +316,11 @@ public class CucumberRitualController : MonoBehaviour, IRitualController
                 return;
             }
 
-            // 2. УСПЕШНЫЙ / НЕТОЧНЫЙ СРЕЗ (Попали в допустимый диапазон)
             if (AudioManager.Instance != null && sliceSound != null)
                 AudioManager.Instance.PlaySound3D(sliceSound, knifeObject.transform.position);
 
             float missFactor = Mathf.InverseLerp(0, maxCutDistance, distanceToTarget);
 
-            // Оставляем шрам в любом случае, даже если срез идеальный
             if (boardController != null)
             {
                 boardController.RegisterNewScar(hit.point, missFactor);
@@ -306,7 +335,6 @@ public class CucumberRitualController : MonoBehaviour, IRitualController
         }
         else
         {
-            // 3. УДАР ВООБЩЕ МИМО ДОСКИ
             if (AudioManager.Instance != null && knifeMissSound != null)
                 AudioManager.Instance.PlaySound3D(knifeMissSound, knifeObject.transform.position);
 
@@ -319,7 +347,6 @@ public class CucumberRitualController : MonoBehaviour, IRitualController
     {
         if (cucumberStages.Length > currentStageIndex && cucumberStages[currentStageIndex] != null)
         {
-            // Физическое отделение старого куска
             Rigidbody oldSlice = cucumberStages[currentStageIndex].GetComponentInChildren<Rigidbody>();
             if (oldSlice != null) oldSlice.transform.SetParent(null);
             cucumberStages[currentStageIndex].SetActive(false);
@@ -341,9 +368,110 @@ public class CucumberRitualController : MonoBehaviour, IRitualController
 
         if (currentStageIndex >= cutPoints.Length)
         {
-            if (GameLoopManager.Instance != null) GameLoopManager.Instance.RegisterRitualComplete();
-            Invoke("EndRitual", 0.5f);
+            canCut = false;
+            if (cutLightMarker != null) cutLightMarker.gameObject.SetActive(false);
+
+            StartCoroutine(FinalizeSaladRoutine());
         }
+    }
+
+    private IEnumerator FinalizeSaladRoutine()
+    {
+        if (knifeObject != null) knifeObject.SetActive(false);
+
+
+        if (emptyPlate != null && emptyPlateTargetPos != null)
+        {
+            float t = 0;
+            while (t < plateSlideDuration)
+            {
+                float easeOut = 1f - Mathf.Pow(1f - (t / plateSlideDuration), 3f);
+                emptyPlate.transform.position = Vector3.Lerp(emptyPlateStartPos, emptyPlateTargetPos.position, easeOut);
+                t += Time.deltaTime;
+                yield return null;
+            }
+            emptyPlate.transform.position = emptyPlateTargetPos.position;
+        }
+
+        if (boardCollider != null && slipperyMaterial != null)
+        {
+            boardCollider.sharedMaterial = slipperyMaterial;
+        }
+
+
+        if (boardTransform != null)
+        {
+            Vector3 targetPos = originalBoardPosition + Vector3.up * boardLiftHeight;
+            float t = 0;
+            while (t < boardLiftDuration)
+            {
+                boardTransform.localPosition = Vector3.Lerp(originalBoardPosition, targetPos, t / boardLiftDuration);
+                t += Time.deltaTime;
+                yield return null;
+            }
+            boardTransform.localPosition = targetPos;
+        }
+
+
+        if (boardTransform != null)
+        {
+            Quaternion targetRot = originalBoardRotation * Quaternion.Euler(boardTiltRotation);
+            float t = 0;
+            while (t < boardTiltDuration)
+            {
+                boardTransform.localRotation = Quaternion.Slerp(originalBoardRotation, targetRot, t / boardTiltDuration);
+                t += Time.deltaTime;
+                yield return null;
+            }
+            boardTransform.localRotation = targetRot;
+        }
+
+
+        yield return new WaitForSeconds(slideWaitTime);
+
+
+        foreach (var mem in sliceMemories)
+        {
+            if (mem.transform != null)
+            {
+                mem.transform.gameObject.SetActive(false);
+            }
+        }
+
+
+        if (boardTransform != null)
+        {
+            float t = 0;
+            while (t < boardReturnDuration)
+            {
+                boardTransform.localRotation = Quaternion.Slerp(boardTransform.localRotation, originalBoardRotation, t / boardReturnDuration);
+                t += Time.deltaTime;
+                yield return null;
+            }
+            boardTransform.localRotation = originalBoardRotation;
+        }
+
+
+        if (boardTransform != null)
+        {
+            float t = 0;
+            while (t < boardReturnDuration)
+            {
+                boardTransform.localPosition = Vector3.Lerp(boardTransform.localPosition, originalBoardPosition, t / boardReturnDuration);
+                t += Time.deltaTime;
+                yield return null;
+            }
+            boardTransform.localPosition = originalBoardPosition;
+        }
+
+        if (emptyPlate != null) emptyPlate.SetActive(false);
+        if (fullSalad != null) fullSalad.SetActive(true);
+
+        _isRitualCompleted = true;
+        if (ritualActivator != null) ritualActivator.gameObject.SetActive(false);
+
+        if (GameLoopManager.Instance != null) GameLoopManager.Instance.RegisterRitualComplete();
+        EndRitual();
     }
 
     public void PauseRitual()
@@ -381,10 +509,10 @@ public class CucumberRitualController : MonoBehaviour, IRitualController
 
         ToggleRitualObjects(false);
         if (cameraHandler != null) cameraHandler.ExitRitualMode();
-        if (ritualActivator != null) ritualActivator.RitualFinished();
+        if (ritualActivator != null && !_isRitualCompleted) ritualActivator.RitualFinished();
 
-        Cursor.visible = true;
-        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = false;
+        Cursor.lockState = CursorLockMode.Locked;
     }
 
     private void ResetRitualGlobal()
@@ -392,9 +520,14 @@ public class CucumberRitualController : MonoBehaviour, IRitualController
         if (_isRitualActive) EndRitual();
 
         currentStageIndex = 0;
+        _isRitualCompleted = false;
+
+        if (ritualActivator != null) ritualActivator.gameObject.SetActive(true);
 
         foreach (var mem in sliceMemories)
         {
+            if (mem.transform != null) mem.transform.gameObject.SetActive(true);
+
             mem.transform.SetParent(mem.originalParent);
             mem.transform.localPosition = mem.originalLocalPos;
             mem.transform.localRotation = mem.originalLocalRot;
@@ -411,10 +544,26 @@ public class CucumberRitualController : MonoBehaviour, IRitualController
             if (cucumberStages[i] != null)
                 cucumberStages[i].SetActive(i == 0);
         }
+
+        if (boardTransform != null)
+        {
+            boardTransform.localRotation = originalBoardRotation;
+            boardTransform.localPosition = originalBoardPosition;
+        }
+        if (boardCollider != null) boardCollider.sharedMaterial = originalBoardMaterial;
+
+        if (emptyPlate != null)
+        {
+            emptyPlate.SetActive(true);
+            emptyPlate.transform.position = emptyPlateStartPos;
+        }
+        if (fullSalad != null) fullSalad.SetActive(false);
     }
 
     private void ToggleRitualObjects(bool active)
     {
+        if (_isRitualCompleted) return;
+
         knifeObject.SetActive(active);
 
         if (active)
