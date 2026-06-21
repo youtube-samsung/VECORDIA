@@ -32,11 +32,16 @@ public class FirstPersonController : MonoBehaviour
     [SerializeField] private float fovKickAmount = 10f;
     [SerializeField] private float fovKickTime = 0.1f;
 
-   
+    [Header("Audio (Звуки)")]
+    [SerializeField] private SoundData footstepSoundData; // Кассета со звуками шагов
+    [SerializeField] private SoundData jumpSoundData;     // Звук отрыва от земли
+    [SerializeField] private SoundData landSoundData;     // Звук приземления
+    [SerializeField] private float walkStepInterval = 0.5f;
+    [SerializeField] private float runStepInterval = 0.3f;
+
     private CharacterController controller;
     private Camera cam;
 
-   
     private Vector3 moveDirection;
     private float cameraXRotation;
     private bool isJumping;
@@ -45,6 +50,7 @@ public class FirstPersonController : MonoBehaviour
     private float currentFOV;
     private float headBobTimer;
     private Vector3 originalCameraPosition;
+    private float stepTimer;
 
     private float CurrentMoveSpeed => inputReader.IsSprinting ? runSpeed : walkSpeed;
     private bool IsMoving => inputReader.MoveValue.magnitude > 0.1f && controller.isGrounded;
@@ -52,25 +58,18 @@ public class FirstPersonController : MonoBehaviour
     private void Start()
     {
         controller = GetComponent<CharacterController>();
-
         cam = playerCamera != null ? playerCamera : Camera.main;
         originalCameraPosition = cam.transform.localPosition;
         originalFOV = cam.fieldOfView;
         currentFOV = originalFOV;
 
-        if (inputReader == null)
-            Debug.LogError("InputReader не назначен в инспекторе!");
-
-        //Cursor.lockState = CursorLockMode.Locked;
+        if (inputReader == null) Debug.LogError("InputReader не назначен в инспекторе!");
     }
 
     private void Update()
     {
-        if (!GetComponent<CharacterController>().enabled) return;
-        if (Time.timeScale == 0f)
-        {
-            return; 
-        }
+        if (!controller.enabled || Time.timeScale == 0f) return;
+
         HandleLook();
         HandleFOVKick();
         HandleMovement();
@@ -79,16 +78,16 @@ public class FirstPersonController : MonoBehaviour
 
     private void FixedUpdate()
     {
-        
+        if (!controller.enabled || Time.timeScale == 0f) return;
+
+        HandleFootsteps();
     }
 
     private void HandleLook()
     {
-      
         float yRot = inputReader.LookValue.x * mouseSensitivity;
         transform.Rotate(Vector3.up, yRot);
 
-      
         float xRot = inputReader.LookValue.y * mouseSensitivity;
         cameraXRotation -= xRot;
         cameraXRotation = Mathf.Clamp(cameraXRotation, -maxLookAngle, maxLookAngle);
@@ -102,35 +101,19 @@ public class FirstPersonController : MonoBehaviour
         {
             cam.transform.localRotation = Quaternion.Euler(cameraXRotation, 0, 0);
         }
-
-        // Cursor lock
-        //if (Keyboard.current?.escapeKey.wasPressedThisFrame ?? false)
-        //{
-        //    Cursor.lockState = CursorLockMode.None;
-        //    Cursor.visible = true;
-        //}
-        //else if (Mouse.current?.leftButton.wasPressedThisFrame ?? false)
-        //{
-        //    Cursor.lockState = CursorLockMode.Locked;
-        //    Cursor.visible = false;
-        //}
     }
 
     private void HandleMovement()
     {
         bool isGrounded = controller.isGrounded;
 
-
         Vector3 forward = transform.forward;
         Vector3 right = transform.right;
-
         Vector3 desiredMove = (forward * inputReader.MoveValue.y + right * inputReader.MoveValue.x).normalized;
-
 
         float currentSpeed = CurrentMoveSpeed;
         moveDirection.x = desiredMove.x * currentSpeed;
         moveDirection.z = desiredMove.z * currentSpeed;
-
 
         if (isGrounded)
         {
@@ -141,6 +124,7 @@ public class FirstPersonController : MonoBehaviour
                 moveDirection.y = jumpSpeed;
                 isJumping = true;
                 inputReader.ConsumeJump();
+                PlayJumpSound(); // ВОТ ТУТ ЗВУК ПРЫЖКА
             }
         }
         else
@@ -148,13 +132,13 @@ public class FirstPersonController : MonoBehaviour
             moveDirection.y += Physics.gravity.y * gravityMultiplier * Time.fixedDeltaTime;
         }
 
-
         controller.Move(moveDirection * Time.fixedDeltaTime);
 
-
+        // Проверка приземления
         if (!wasGrounded && isGrounded)
         {
             isJumping = false;
+            PlayLandSound(); // ВОТ ТУТ ЗВУК ПРИЗЕМЛЕНИЯ
         }
 
         wasGrounded = isGrounded;
@@ -167,7 +151,7 @@ public class FirstPersonController : MonoBehaviour
         if (IsMoving && controller.isGrounded)
         {
             float speedMultiplier = inputReader.IsSprinting ? runstepLenghten : 1f;
-            headBobTimer += Time.fixedDeltaTime * headBobSpeed * speedMultiplier;
+            headBobTimer += Time.deltaTime * headBobSpeed * speedMultiplier;
 
             float bobX = Mathf.Sin(headBobTimer) * headBobAmount;
             float bobY = Mathf.Sin(headBobTimer * 2f) * (headBobAmount * 0.5f);
@@ -177,7 +161,7 @@ public class FirstPersonController : MonoBehaviour
         else
         {
             headBobTimer = 0;
-            cam.transform.localPosition = Vector3.Lerp(cam.transform.localPosition, originalCameraPosition, Time.fixedDeltaTime * 10f);
+            cam.transform.localPosition = Vector3.Lerp(cam.transform.localPosition, originalCameraPosition, Time.deltaTime * 10f);
         }
     }
 
@@ -199,51 +183,48 @@ public class FirstPersonController : MonoBehaviour
         }
     }
 
-    //ЗВУКИ ( потом добавить) 
-    //
-    // [Header("Audio")]
-    // [SerializeField] private AudioClip[] footstepSounds;
-    // [SerializeField] private AudioClip jumpSound;
-    // [SerializeField] private AudioClip landSound;
-    // [SerializeField] private float stepInterval = 0.5f;
-    //
-    // private AudioSource audioSource;
-    // private float stepTimer;
-    //
-    // private void Start() {
-    //     audioSource = GetComponent<AudioSource>();
-    // }
-    //
-    // private void HandleFootsteps() {
-    //     if (IsMoving && controller.isGrounded && !isJumping) {
-    //         stepTimer -= Time.fixedDeltaTime;
-    //         if (stepTimer <= 0) {
-    //             PlayFootstep();
-    //             float speedMultiplier = inputReader.IsSprinting ? 0.7f : 1f;
-    //             stepTimer = stepInterval * speedMultiplier;
-    //         }
-    //     } else {
-    //         stepTimer = 0;
-    //     }
-    // }
-    //
-    // private void PlayFootstep() {
-    //     if (footstepSounds.Length > 0) {
-    //         AudioClip clip = footstepSounds[Random.Range(0, footstepSounds.Length)];
-    //         audioSource.PlayOneShot(clip);
-    //     }
-    // }
-    //
-    // private void PlayJumpSound() {
-    //     if (jumpSound != null) audioSource.PlayOneShot(jumpSound);
-    // }
-    //
-    // private void PlayLandSound() {
-    //     if (landSound != null) audioSource.PlayOneShot(landSound);
-    // }
-    //
+    // --- ЛОГИКА ЗВУКОВ ЧЕРЕЗ AUDIOMANAGER ---
 
-    // - PlayJumpSound() в HandleMovement() при прыжке
-    // - PlayLandSound() в HandleMovement() при приземлении
-    // - HandleFootsteps() в FixedUpdate()
+    private void HandleFootsteps()
+    {
+        if (IsMoving && controller.isGrounded && !isJumping)
+        {
+            stepTimer -= Time.fixedDeltaTime;
+            if (stepTimer <= 0)
+            {
+                PlayFootstep();
+                // Меняем интервал в зависимости от того, бежим мы или идем
+                stepTimer = inputReader.IsSprinting ? runStepInterval : walkStepInterval;
+            }
+        }
+        else
+        {
+            // Сбрасываем таймер, чтобы первый шаг всегда звучал сразу после начала движения
+            stepTimer = 0;
+        }
+    }
+
+    private void PlayFootstep()
+    {
+        if (AudioManager.Instance != null && footstepSoundData != null)
+        {
+            AudioManager.Instance.PlayFootstep(footstepSoundData);
+        }
+    }
+
+    private void PlayJumpSound()
+    {
+        if (AudioManager.Instance != null && jumpSoundData != null)
+        {
+            AudioManager.Instance.PlayFootstep(jumpSoundData); // Используем канал шагов
+        }
+    }
+
+    private void PlayLandSound()
+    {
+        if (AudioManager.Instance != null && landSoundData != null)
+        {
+            AudioManager.Instance.PlayFootstep(landSoundData); // Используем канал шагов
+        }
+    }
 }

@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b9640129e40d71446b7a2b15e806fff1, type: 3}
+  m_Name: steps
+  m_EditorClassIdentifier: Assembly-CSharp::SoundData
+  clips:
+  - {fileID: 8300000, guid: 0b361047dc959e444b028c9673bb79df, type: 3}
+  - {fileID: 8300000, guid: 63cabb49140d8a14b85e92a4bf49ae36, type: 3}
+  - {fileID: 8300000, guid: 127508e052afd5e45972354236f351aa, type: 3}
+  - {fileID: 8300000, guid: 7146e56fd5fb098479faf72f70215b16, type: 3}
+  minVolume: 0.279
+  maxVolume: 0.293
+  minPitch: 0.95
+  maxPitch: 1.1

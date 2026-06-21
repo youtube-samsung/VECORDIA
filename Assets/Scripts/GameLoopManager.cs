@@ -28,8 +28,9 @@ public class GameLoopManager : MonoBehaviour
     {
         if (AnxietyManager.Instance != null)
             AnxietyManager.Instance.OnMentalBreakdown += TriggerDeath;
-
+        AudioManager.Instance.StopMusic();
         StartNewLoop();
+        
     }
 
     private void OnDestroy()
