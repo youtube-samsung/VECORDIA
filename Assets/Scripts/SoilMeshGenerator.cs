@@ -125,7 +125,7 @@ public class SoilMeshGenerator : MonoBehaviour
     private void CreatePreview(Vector3[] flatVerts, int[] tris, int angleWidth)
     {
         previewObject = new GameObject("PreviewOverlay");
-        previewObject.transform.position = transform.position + Vector3.up * 0.05f;
+        previewObject.transform.position = transform.position + Vector3.up * 0.02f;
         previewObject.transform.rotation = transform.rotation;
 
         Mesh pMesh = new Mesh { vertices = flatVerts, triangles = tris };

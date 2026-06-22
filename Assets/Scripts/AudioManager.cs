@@ -220,21 +220,24 @@ public class AudioManager : MonoBehaviour
         Destroy(tempAudioObj, tempSource.clip.length / tempSource.pitch);
     }
 
-    public AudioSource PlayLoopingSound3D(SoundData soundData, Vector3 position)
+    public AudioSource PlayLoopingSound3D(SoundData soundData, Vector3 position, float minDistance = 1f, float maxDistance = 15f, float spatialBlend = 1f)
     {
         if (soundData == null || soundData.clips.Length == 0) return null;
 
-        GameObject tempAudioObj = new GameObject("LoopingAudio_3D");
+        GameObject tempAudioObj = new GameObject("LoopingAudio_3D_" + soundData.name);
         tempAudioObj.transform.position = position;
 
         AudioSource tempSource = tempAudioObj.AddComponent<AudioSource>();
         tempSource.clip = soundData.GetRandomClip();
         tempSource.volume = soundData.GetRandomVolume();
         tempSource.pitch = soundData.GetRandomPitch();
-        tempSource.spatialBlend = 0.7f;
+
+        tempSource.spatialBlend = spatialBlend; 
         tempSource.rolloffMode = AudioRolloffMode.Linear;
-        tempSource.minDistance = 1f;
-        tempSource.maxDistance = 15f;
+
+        tempSource.minDistance = minDistance;
+        tempSource.maxDistance = maxDistance;
+
         tempSource.loop = true;
         tempSource.Play();
 

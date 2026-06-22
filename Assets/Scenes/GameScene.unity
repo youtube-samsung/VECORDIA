@@ -438,6 +438,8 @@ MonoBehaviour:
   crosshairAnimSpeed: 15
   normalColor: {r: 1, g: 1, b: 1, a: 0.5}
   activeColor: {r: 0.394323, g: 0.6415094, b: 0.14222142, a: 1}
+  defaultCrosshairSprite: {fileID: 0}
+  activeInteractionSprite: {fileID: 0}
   onInteractEvent:
     m_PersistentCalls:
       m_Calls: []
@@ -1003,6 +1005,64 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.014804352, y: 0.014261687, z: 0.030315455}
   m_Center: {x: -0.0008579189, y: 0.0037140138, z: -0.001549866}
+--- !u!114 &224235978
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 224235970}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9023d551f7ca9004b93dee99587c67b6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AmbientAudioEmitter
+  loopSoundData: {fileID: 11400000, guid: 673b4b58e0555904ba2704b01010b8dd, type: 2}
+  spatialBlend: 0.837
+  minDistance: 0.8
+  maxDistance: 5
+--- !u!114 &224235979
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 224235970}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ca7bda749be059a419db483e4e3612aa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RitualActivator
+  inputReader: {fileID: 570600791}
+  playerCamera: {fileID: 1571217752}
+  targetRitualScript: {fileID: 0}
+  interactDistance: 1.2
+  interactionPromptText: {fileID: 1360159271}
+  interactionPrompts:
+  - " \u043D\u0430\u043B\u0430\u0436\u0438\u0442\u044C \u0432 \u0445\u043E\u043B\u043E\u0434\u0438\u043B\u044C\u043D\u0438\u043A"
+  crosshairImage: {fileID: 1537660041}
+  normalScale: 1
+  activeScale: 5
+  crosshairAnimSpeed: 15
+  normalColor: {r: 1, g: 1, b: 1, a: 0.5}
+  activeColor: {r: 1, g: 1, b: 1, a: 1}
+  defaultCrosshairSprite: {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}
+  activeInteractionSprite: {fileID: 21300000, guid: eadc93677b8bc81459fbe3e30dd73c43, type: 3}
+  onInteractEvent:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1780755876}
+        m_TargetAssemblyTypeName: SaladDeliveryController, Assembly-CSharp
+        m_MethodName: PlaceInFridge
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!1001 &234765204
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1302,6 +1362,12 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 5861923f0d59ea1409b04974c2bc9a80, type: 3}
       insertIndex: -1
       addedObject: {fileID: 224235974}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 5861923f0d59ea1409b04974c2bc9a80, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 224235978}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 5861923f0d59ea1409b04974c2bc9a80, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 224235979}
   m_SourcePrefab: {fileID: 100100000, guid: 5861923f0d59ea1409b04974c2bc9a80, type: 3}
 --- !u!1 &276211876 stripped
 GameObject:
@@ -2731,6 +2797,8 @@ MonoBehaviour:
   crosshairAnimSpeed: 15
   normalColor: {r: 1, g: 1, b: 1, a: 0.5}
   activeColor: {r: 0.29504877, g: 1, b: 0.0047169924, a: 1}
+  defaultCrosshairSprite: {fileID: 0}
+  activeInteractionSprite: {fileID: 0}
   onInteractEvent:
     m_PersistentCalls:
       m_Calls:
@@ -3735,6 +3803,81 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.00048876693, y: 0.006829737, z: 0.0065984842}
   m_Center: {x: -0.00006603725, y: 0.00032113725, z: -0.000433265}
+--- !u!1 &894675372
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 894675373}
+  - component: {fileID: 894675375}
+  - component: {fileID: 894675374}
+  m_Layer: 5
+  m_Name: WinScreen
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!224 &894675373
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 894675372}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1163994727}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &894675374
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 894675372}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 21300000, guid: 0a8bd53df04b0774eb6483f91852c108, type: 3}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &894675375
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 894675372}
+  m_CullTransparentMesh: 1
 --- !u!1 &926179495
 GameObject:
   m_ObjectHideFlags: 0
@@ -10170,6 +10313,7 @@ RectTransform:
   - {fileID: 1173067633}
   - {fileID: 1610847137}
   - {fileID: 1537660040}
+  - {fileID: 894675373}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -11048,8 +11192,8 @@ MonoBehaviour:
   boardReturnDuration: 0.2
   cutLightMarker: {fileID: 1917844589}
   maxLightIntensity: 2
-  sliceSound: {fileID: 11400000, guid: 67232c70f7fa4e04fa8546470dc6e56e, type: 2}
-  knifeMissSound: {fileID: 11400000, guid: 67232c70f7fa4e04fa8546470dc6e56e, type: 2}
+  sliceSound: {fileID: 11400000, guid: 9f4c5bd4ad4cd394e95bcd6c354e6e19, type: 2}
+  knifeMissSound: {fileID: 0}
   sliceForce: 0.5
   cuttingTolerance: 0.003
   maxCutDistance: 0.05
@@ -11766,7 +11910,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1360159270
 RectTransform:
   m_ObjectHideFlags: 0
@@ -11783,7 +11927,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 9.6, y: -6.5}
+  m_AnchoredPosition: {x: 0, y: -113}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1360159271
@@ -11828,7 +11972,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: -1183493901
+  m_TextStyleHashCode: 97690656
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
@@ -12399,11 +12543,17 @@ MonoBehaviour:
   enterRitualThought: {fileID: 0}
   completeRitualThought: {fileID: 0}
   sprayAngleWidth: 30
-  sprayCooldown: 0.1
+  sprayCooldown: 0.4
   baseRotationSpeed: 100
-  maxRotationSpeed: 200
+  maxRotationSpeed: 300
   overwaterAnxietyPenalty: 0.2
-  requiredWateredPercentage: 95
+  requiredWateredPercentage: 85
+  spraySound: {fileID: 11400000, guid: 22a5c31183dc5ec4a884a8c1bb130efe, type: 2}
+  ritualCompleteSound: {fileID: 0}
+  potRotateLoopSound: {fileID: 11400000, guid: 66c8919305dd8d645bd17f26912c7f47, type: 2}
+  loopStartSeconds: 1
+  loopEndSeconds: 9.5
+  clipEndSeconds: 9.6
 --- !u!114 &1488575833
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13461,7 +13611,8 @@ MonoBehaviour:
   - {fileID: 1138556413}
   - {fileID: 1016727662}
   - {fileID: 1567984912}
-  doorOpenDuration: 2
+  doorOpenDuration: 3.5
+  doorCloseDuration: 2.3
   leftDoorOpenTargetAngle: 88
   rightDoorOpenTargetAngle: 88
   snapDistance: 2
@@ -13476,6 +13627,9 @@ MonoBehaviour:
   - maxAnxiety: 100
     extraSwaps: 0
     enterThought: {fileID: 11400000, guid: 4f9333c0f87e0d64fa3b5b0c14eaf3f9, type: 2}
+  doorOpenSound: {fileID: 11400000, guid: 8ab115b90e8887b44a83a2c122cfff84, type: 2}
+  doorCloseSound: {fileID: 11400000, guid: 3635dd0b69cf8774495613091a429998, type: 2}
+  clothesMoveSound: {fileID: 11400000, guid: 0efafb9ed3c994942aac70186d385ded, type: 2}
 --- !u!114 &1737947432
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13642,6 +13796,57 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1759845063}
   m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1780755875
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1780755877}
+  - component: {fileID: 1780755876}
+  m_Layer: 0
+  m_Name: SakadController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1780755876
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1780755875}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b89fb3b31ac0f4c41845470cd0a10b77, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SaladDeliveryController
+  fullSaladObject: {fileID: 3415832067799117365}
+  saladTableActivator: {fileID: 5705918232367942601}
+  fridgeActivator: {fileID: 224235979}
+  holdingOffset: {x: 0.3, y: -0.4, z: 0.6}
+  holdingRotation: {x: 270, y: 0, z: 0}
+  pickUpSound: {fileID: 11400000, guid: 12a1c2920d8d07f47a42ede1eb11ce8a, type: 2}
+  putInFridgeSound: {fileID: 11400000, guid: d454fd889b7cc6048977678f0c14b840, type: 2}
+--- !u!4 &1780755877
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1780755875}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 2.16108, y: 2.2604, z: -0.82152}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &1783960872 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5170061281443735454, guid: 5afd3388600efb64495792741d037ba2, type: 3}
@@ -13679,6 +13884,9 @@ MonoBehaviour:
   playerTransform: {fileID: 358417536}
   bedSpawnPoint: {fileID: 801339531}
   clockText: {fileID: 0}
+  victoryImage: {fileID: 894675372}
+  victorySound: {fileID: 11400000, guid: 2628f01922b14b944b51c92021de27f9, type: 2}
+  finalSequenceDelay: 3
 --- !u!4 &1794838285
 Transform:
   m_ObjectHideFlags: 0
@@ -14722,10 +14930,12 @@ MonoBehaviour:
   interactionPrompts: []
   crosshairImage: {fileID: 1537660041}
   normalScale: 1
-  activeScale: 2
+  activeScale: 5
   crosshairAnimSpeed: 15
   normalColor: {r: 1, g: 1, b: 1, a: 0.5}
-  activeColor: {r: 0.26022384, g: 0.7169812, b: 0.043965846, a: 1}
+  activeColor: {r: 0.8142826, g: 0.9811321, b: 0.7358491, a: 1}
+  defaultCrosshairSprite: {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}
+  activeInteractionSprite: {fileID: 21300000, guid: eadc93677b8bc81459fbe3e30dd73c43, type: 3}
   onInteractEvent:
     m_PersistentCalls:
       m_Calls: []
@@ -14748,7 +14958,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.1, y: 1.2, z: 0.7}
+  m_Size: {x: 0.4, y: 1.2, z: 0.7}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!4 &1992172318
 Transform:
@@ -14759,7 +14969,7 @@ Transform:
   m_GameObject: {fileID: 1992172315}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.365, y: -0.015, z: 0.085}
+  m_LocalPosition: {x: -0.508, y: -0.015, z: 0.085}
   m_LocalScale: {x: 2, y: 2, z: 2}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -15166,6 +15376,8 @@ MonoBehaviour:
   crosshairAnimSpeed: 15
   normalColor: {r: 1, g: 1, b: 1, a: 0.5}
   activeColor: {r: 0.32541087, g: 0.6792453, b: 0.06087574, a: 1}
+  defaultCrosshairSprite: {fileID: 0}
+  activeInteractionSprite: {fileID: 0}
   onInteractEvent:
     m_PersistentCalls:
       m_Calls: []
@@ -15523,6 +15735,8 @@ MonoBehaviour:
   crosshairAnimSpeed: 15
   normalColor: {r: 1, g: 1, b: 1, a: 0.5}
   activeColor: {r: 0.22375585, g: 0.6037736, b: 0.054111768, a: 1}
+  defaultCrosshairSprite: {fileID: 0}
+  activeInteractionSprite: {fileID: 0}
   onInteractEvent:
     m_PersistentCalls:
       m_Calls: []
@@ -15550,14 +15764,23 @@ MonoBehaviour:
   zoneRadius: 0.06
   maxMovementRadius: 0.25
   maxMoveSpeed: 0.01
-  baseFriction: 2.5
-  panicFriction: 5
-  baseZoneSpeed: 0.1
+  baseFriction: 7
+  panicFriction: 1.4
+  baseZoneSpeed: 0.3
   maxZoneSpeed: 1
   zoneSmoothTime: 0.5
+  targetChangeTolerance: 0.04
   outsideAnxietyRate: 2
-  gracePeriod: 0.3
+  gracePeriod: 0.2
   totalCleanDuration: 9
+  dirtyRegressRate: 0.4
+  spongeWashLoopSound: {fileID: 0}
+  spongeScrapeLoopSound: {fileID: 0}
+  cleanCompleteSound: {fileID: 0}
+  waterTapLoopSound: {fileID: 11400000, guid: f1543f9383bfd934098d8013036dddc7, type: 2}
+  tapLoopStartSeconds: 2.25
+  tapLoopEndSeconds: 12.5
+  tapClipEndSeconds: 14
 --- !u!65 &2128400697
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -15686,6 +15909,7 @@ GameObject:
   - component: {fileID: 5705918232367942599}
   - component: {fileID: 5163617823210364222}
   - component: {fileID: 5705918232367942600}
+  - component: {fileID: 5705918232367942601}
   m_Layer: 0
   m_Name: tarelka s salatom
   m_TagString: Untagged
@@ -16028,6 +16252,48 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 7162240577344249023, guid: 63a26e77fe1a5c34f81750bf6610eff2, type: 3}
+--- !u!114 &5705918232367942601
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3415832067799117365}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ca7bda749be059a419db483e4e3612aa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RitualActivator
+  inputReader: {fileID: 570600791}
+  playerCamera: {fileID: 1571217752}
+  targetRitualScript: {fileID: 0}
+  interactDistance: 1.5
+  interactionPromptText: {fileID: 1360159271}
+  interactionPrompts:
+  - " \u0412\u0437\u044F\u0442\u044C \u0421\u0430\u043B\u0430\u0442"
+  crosshairImage: {fileID: 1537660041}
+  normalScale: 1
+  activeScale: 5
+  crosshairAnimSpeed: 15
+  normalColor: {r: 1, g: 1, b: 1, a: 0.5}
+  activeColor: {r: 1, g: 1, b: 1, a: 1}
+  defaultCrosshairSprite: {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}
+  activeInteractionSprite: {fileID: 21300000, guid: eadc93677b8bc81459fbe3e30dd73c43, type: 3}
+  onInteractEvent:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1780755876}
+        m_TargetAssemblyTypeName: SaladDeliveryController, Assembly-CSharp
+        m_MethodName: PickUpSalad
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!4 &8191345531401619918
 Transform:
   m_ObjectHideFlags: 0
@@ -16102,3 +16368,4 @@ SceneRoots:
   - {fileID: 1187653823583799280}
   - {fileID: 1493830032}
   - {fileID: 535532865}
+  - {fileID: 1780755877}
