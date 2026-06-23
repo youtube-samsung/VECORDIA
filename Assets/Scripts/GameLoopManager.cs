@@ -17,7 +17,7 @@ public class GameLoopManager : MonoBehaviour
     // Глобальные события
     public static event Action OnDeathScreamerRequested;
     public static event Action OnLoopReset;
-    public static event Action OnAllRitualsCompleted; // Тот самый крик на всю игру
+    public static event Action OnAllRitualsCompleted; 
 
     private int _completedRituals = 0;
     private bool _isLoopEnding = false;
@@ -80,6 +80,9 @@ public class GameLoopManager : MonoBehaviour
         _isLoopEnding = false;
         _isFinalPhaseStarted = false;
         _completedRituals = 0;
+
+        if (AudioManager.Instance != null)
+            AudioManager.Instance.StopMusic();
 
         if (playerTransform != null && bedSpawnPoint != null)
         {

@@ -124,8 +124,7 @@ public class AudioManager : MonoBehaviour
 
     private void Start()
     {
-        // Проверяем по индексу сборки. 0 — это всегда MainMenu.
-        // Если запустили сразу сцену квартиры в редакторе (индекс > 0), эмбиент включится сам.
+
         if (SceneManager.GetActiveScene().buildIndex > 0)
         {
             if (defaultAmbientMusic != null) PlayMusic(defaultAmbientMusic);
@@ -210,7 +209,7 @@ public class AudioManager : MonoBehaviour
         }
     }
 
-    // БЕЗОПАСНЫЙ ЗАПУСК МУЗЫКИ ДЛЯ БИЛДА (Разводит потоки через корутину на 1 кадр)
+
     public void PlayMusic(SoundData musicData)
     {
         if (musicData == null || musicData.clips.Length == 0) return;
@@ -311,6 +310,11 @@ public class AudioManager : MonoBehaviour
         {
             float waitTime = Random.Range(minTimeBetweenScares, maxTimeBetweenScares);
             yield return new WaitForSeconds(waitTime);
+
+            if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().buildIndex == 0 || Time.timeScale == 0f)
+            {
+                continue;
+            }
 
             if (randomAmbientScareSounds != null && sfxSource != null)
             {
