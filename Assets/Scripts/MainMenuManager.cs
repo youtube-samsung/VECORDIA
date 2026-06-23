@@ -45,8 +45,11 @@ public class MainMenuManager : MonoBehaviour
     private Coroutine _delayFadeCoroutine;
     private bool _isMouseOverAnyButton = false;
 
-    private void Start()
+    private IEnumerator Start()
     {
+        // Даем Unity один кадр/долю секунды, чтобы AudioManager полностью проснулся и настроил микшер
+        yield return new WaitForSeconds(0.1f);
+
         if (menuMusic != null && AudioManager.Instance != null)
         {
             AudioManager.Instance.PlayMusic(menuMusic);
@@ -60,7 +63,6 @@ public class MainMenuManager : MonoBehaviour
 
         if (_mainMenuPanel != null) _mainMenuPanel.SetActive(true);
 
-        // Жестко сбрасываем всё в дефолт при старте
         if (backgroundImage != null) backgroundImage.sprite = defaultSprite;
     }
 

@@ -262,7 +262,7 @@ AudioSource:
   m_GameObject: {fileID: 389359100}
   m_Enabled: 1
   serializedVersion: 4
-  OutputAudioMixerGroup: {fileID: 0}
+  OutputAudioMixerGroup: {fileID: 24300002, guid: 6582c04b1c076e84e97d584c4e7608c9, type: 2}
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
   m_PlayOnAwake: 0
@@ -929,6 +929,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: AudioManagerController
       objectReference: {fileID: 0}
+    - target: {fileID: 8996088139959177625, guid: bd74152e45717d54d91a4c5831f41dc2, type: 3}
+      propertyPath: defaultAmbientMusic
+      value: 
+      objectReference: {fileID: 11400000, guid: 56cf287901699654bae0936543cc1f6e, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

@@ -34,6 +34,7 @@ public class AudioManager : MonoBehaviour
     public float volumeAt90 = 0.8f;
 
     private Coroutine _heartbeatFadeCoroutine;
+    private Coroutine _musicPlayCoroutine;
 
     [Header("Случайный Эмбиент (Диссонанс)")]
     public SoundData randomAmbientScareSounds;
@@ -74,36 +75,77 @@ public class AudioManager : MonoBehaviour
     {
         if (AnxietyManager.Instance != null)
         {
-            // Сбрасываем старые подписки, чтобы не плодить дубликаты
+            // Отписываемся от старых, чтобы не дублировать
             AnxietyManager.Instance.OnAnxietyThresholdReached -= HandleAnxietySpike;
             AnxietyManager.Instance.OnMentalBreakdown -= ResetAudioOnDeath;
 
             // Подписываемся заново на новой сцене
             AnxietyManager.Instance.OnAnxietyThresholdReached += HandleAnxietySpike;
-            AnxietyManager.Instance.OnMentalBreakdown += ResetAudioOnDeath; // Жесткий сброс при смерти
+            AnxietyManager.Instance.OnMentalBreakdown += ResetAudioOnDeath;
+        }
+
+        // Если загрузилась сцена игры (buildIndex > 0)
+        if (scene.buildIndex > 0)
+        {
+            if (defaultAmbientMusic != null && (musicSource == null || !musicSource.isPlaying))
+                PlayMusic(defaultAmbientMusic);
+
+            if (defaultHeartbeat != null && (heartbeatSource == null || !heartbeatSource.isPlaying))
+                StartHeartbeat(defaultHeartbeat);
+        }
+
+        // ЕСЛИ МЫ ВЕРНУЛИСЬ В ГЛАВНОЕ МЕНЮ (buildIndex == 0) — ЖЕСТКАЯ ЗАЧИСТКА
+        if (scene.buildIndex == 0)
+        {
+            StopAllCoroutines();
+
+            // 1. Принудительно затыкаем главные источники, чтобы музыка квартиры не пела в меню
+            if (musicSource != null) musicSource.Stop();
+            if (heartbeatSource != null) heartbeatSource.Stop();
+            if (sfxSource != null) sfxSource.Stop();
+
+            // 2. Сбрасываем их параметры в дефолт
+            ResetAnxietySounds();
+
+            // 3. Запускаем пугалки меню заново
+            StartCoroutine(RandomAmbientRoutine());
+
+            // 4. Уничтожаем все временные 3D-звуки из квартиры
+            GameObject[] gameSounds = GameObject.FindGameObjectsWithTag("Untagged");
+            foreach (GameObject go in gameSounds)
+            {
+                if (go.name.StartsWith("TempAudio_3D") || go.name.StartsWith("LoopingAudio_3D_"))
+                {
+                    Destroy(go);
+                }
+            }
         }
     }
 
     private void Start()
     {
-        if (defaultAmbientMusic != null) PlayMusic(defaultAmbientMusic);
-        if (defaultHeartbeat != null) StartHeartbeat(defaultHeartbeat);
+        // Проверяем по индексу сборки. 0 — это всегда MainMenu.
+        // Если запустили сразу сцену квартиры в редакторе (индекс > 0), эмбиент включится сам.
+        if (SceneManager.GetActiveScene().buildIndex > 0)
+        {
+            if (defaultAmbientMusic != null) PlayMusic(defaultAmbientMusic);
+            if (defaultHeartbeat != null) StartHeartbeat(defaultHeartbeat);
+        }
 
         StartCoroutine(RandomAmbientRoutine());
     }
 
     public void StopMusic()
     {
+        if (_musicPlayCoroutine != null) StopCoroutine(_musicPlayCoroutine);
         if (musicSource != null && musicSource.isPlaying) musicSource.Stop();
     }
 
-    // --- МГНОВЕННЫЙ СБРОС ЗВУКОВ (ПРИ СМЕРТИ / ПЕРЕЗАПУСКЕ) ---
     private void ResetAudioOnDeath()
     {
         ResetAnxietySounds();
     }
 
-    // Публичный метод — можно дернуть из любого скрипта перезапуска лупа
     public void ResetAnxietySounds()
     {
         if (_heartbeatFadeCoroutine != null) StopCoroutine(_heartbeatFadeCoroutine);
@@ -115,7 +157,6 @@ public class AudioManager : MonoBehaviour
         }
     }
 
-    // --- ЛОГИКА НАРАСТАНИЯ ТРЕВОГИ ПО ИНСПЕКТОРУ ---
     private void HandleAnxietySpike(int threshold)
     {
         if (anxietyStingers != null)
@@ -123,7 +164,6 @@ public class AudioManager : MonoBehaviour
             PlaySound2D(anxietyStingers);
         }
 
-        // Выбираем громкость строго из настроек инспектора под каждый десяток
         float targetVolume = 0f;
         switch (threshold)
         {
@@ -136,11 +176,11 @@ public class AudioManager : MonoBehaviour
             case 70: targetVolume = volumeAt70; break;
             case 80: targetVolume = volumeAt80; break;
             case 90: targetVolume = volumeAt90; break;
-            default: targetVolume = (threshold / 100f) * 0.8f; break; // Страховка
+            default: targetVolume = (threshold / 100f) * 0.8f; break;
         }
 
         float factor = threshold / 100f;
-        float targetPitch = 1f + (factor * 0.35f); // Питч по-прежнему плавно учащает пульс
+        float targetPitch = 1f + (factor * 0.35f);
 
         if (_heartbeatFadeCoroutine != null) StopCoroutine(_heartbeatFadeCoroutine);
         _heartbeatFadeCoroutine = StartCoroutine(FadeHeartbeatRoutine(targetVolume, targetPitch, heartbeatFadeDuration));
@@ -170,13 +210,21 @@ public class AudioManager : MonoBehaviour
         }
     }
 
-    // ====================================================================================
-    // СТАНДАРТНЫЕ МЕТОДЫ ВОСПРОИЗВЕДЕНИЯ
-    // ====================================================================================
-
+    // БЕЗОПАСНЫЙ ЗАПУСК МУЗЫКИ ДЛЯ БИЛДА (Разводит потоки через корутину на 1 кадр)
     public void PlayMusic(SoundData musicData)
     {
         if (musicData == null || musicData.clips.Length == 0) return;
+
+        if (_musicPlayCoroutine != null) StopCoroutine(_musicPlayCoroutine);
+        _musicPlayCoroutine = StartCoroutine(PlayMusicDelayedRoutine(musicData));
+    }
+
+    private IEnumerator PlayMusicDelayedRoutine(SoundData musicData)
+    {
+        yield return null; // Пропускаем первый кадр инициализации
+
+        if (musicSource == null) musicSource = gameObject.AddComponent<AudioSource>();
+
         musicSource.clip = musicData.GetRandomClip();
         musicSource.volume = musicData.GetRandomVolume();
         musicSource.pitch = musicData.GetRandomPitch();
@@ -187,6 +235,8 @@ public class AudioManager : MonoBehaviour
     public void StartHeartbeat(SoundData heartbeatData)
     {
         if (heartbeatData == null || heartbeatData.clips.Length == 0) return;
+        if (heartbeatSource == null) heartbeatSource = gameObject.AddComponent<AudioSource>();
+
         heartbeatSource.clip = heartbeatData.GetRandomClip();
         heartbeatSource.loop = true;
         heartbeatSource.volume = 0f;
@@ -196,6 +246,8 @@ public class AudioManager : MonoBehaviour
     public void PlaySound2D(SoundData soundData)
     {
         if (soundData == null || soundData.clips.Length == 0) return;
+        if (sfxSource == null) sfxSource = gameObject.AddComponent<AudioSource>();
+
         sfxSource.pitch = soundData.GetRandomPitch();
         sfxSource.PlayOneShot(soundData.GetRandomClip(), soundData.GetRandomVolume());
     }
@@ -232,7 +284,7 @@ public class AudioManager : MonoBehaviour
         tempSource.volume = soundData.GetRandomVolume();
         tempSource.pitch = soundData.GetRandomPitch();
 
-        tempSource.spatialBlend = spatialBlend; 
+        tempSource.spatialBlend = spatialBlend;
         tempSource.rolloffMode = AudioRolloffMode.Linear;
 
         tempSource.minDistance = minDistance;
