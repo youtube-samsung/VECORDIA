@@ -26,7 +26,10 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
     public ClothingItem[] clothes;
 
     [Header("Настройки дверей")]
+    [Tooltip("Время открытия дверей (в секундах)")]
     public float doorOpenDuration = 0.5f;
+    [Tooltip("Время закрытия дверей (в секундах)")]
+    public float doorCloseDuration = 0.5f;
     public float leftDoorOpenTargetAngle = -90f;
     public float rightDoorOpenTargetAngle = 90f;
 
@@ -38,7 +41,13 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
     public float extraSwapPenalty = 3f;
     public ClosetDifficultyTier[] difficultyTiers;
 
+    [Header("Звуки")]
+    public SoundData doorOpenSound;
+    public SoundData doorCloseSound;
+    public SoundData clothesMoveSound;
+
     private bool _isRitualActive = false;
+    private bool _isRitualCompleted = false;
     public bool IsRitualActive => _isRitualActive;
     private bool areDoorsOpen = false;
 
@@ -168,6 +177,8 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
 
     public void Interact(int stage)
     {
+        if (_isRitualCompleted) return;
+
         if (!areDoorsOpen) OpenDoors();
         else StartRitual();
     }
@@ -177,12 +188,20 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
         if (areDoorsOpen) return;
         areDoorsOpen = true;
 
+        if (AudioManager.Instance != null && doorOpenSound != null)
+        {
+            AudioManager.Instance.PlaySound3D(doorOpenSound, transform.position);
+        }
+
         if (doorAnimationCoroutine != null) StopCoroutine(doorAnimationCoroutine);
         doorAnimationCoroutine = StartCoroutine(AnimateDoors(true));
     }
 
     private IEnumerator AnimateDoors(bool opening)
     {
+        // Динамически выбираем скорость в зависимости от того, открываем или закрываем шкаф
+        float currentDuration = opening ? doorOpenDuration : doorCloseDuration;
+
         Quaternion startRotationLeft = doorLeft.localRotation;
         Quaternion startRotationRight = doorRight.localRotation;
 
@@ -195,10 +214,10 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
             closedRotationRight;
 
         float timeElapsed = 0;
-        while (timeElapsed < doorOpenDuration)
+        while (timeElapsed < currentDuration)
         {
-            doorLeft.localRotation = Quaternion.Slerp(startRotationLeft, targetRotationLeft, timeElapsed / doorOpenDuration);
-            doorRight.localRotation = Quaternion.Slerp(startRotationRight, targetRotationRight, timeElapsed / doorOpenDuration);
+            doorLeft.localRotation = Quaternion.Slerp(startRotationLeft, targetRotationLeft, timeElapsed / currentDuration);
+            doorRight.localRotation = Quaternion.Slerp(startRotationRight, targetRotationRight, timeElapsed / currentDuration);
             timeElapsed += Time.deltaTime;
             yield return null;
         }
@@ -206,15 +225,14 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
         doorLeft.localRotation = targetRotationLeft;
         doorRight.localRotation = targetRotationRight;
 
-        if (opening && ritualActivator != null) ritualActivator.AdvanceInteractionStage();
+        if (opening && ritualActivator != null && !_isRitualCompleted)
+            ritualActivator.AdvanceInteractionStage();
     }
 
     public void StartRitual()
     {
-        if (_isRitualActive) return;
+        if (_isRitualActive || _isRitualCompleted) return;
         _isRitualActive = true;
-
-        Debug.LogWarning("[Дебаг] Ритуал запущен. _isRitualActive = true");
 
         if (ritualActivator != null) ritualActivator.HidePrompt();
         if (cameraHandler != null) cameraHandler.EnterRitualMode(ritualCameraTarget);
@@ -235,13 +253,13 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
 
     private IEnumerator EnableRitualInputDelayed()
     {
+        transform.gameObject.SetActive(true); // Страховка
         yield return new WaitForSeconds(0.2f);
 
         if (_isRitualActive && inputReader != null)
         {
             inputReader.OnRitualClickPerformed += OnDragStartOrEnd;
             inputReader.OnRitualInteractPerformed += EndRitual;
-            Debug.LogWarning("[Дебаг] Инпуты успешно подписаны после задержки.");
         }
     }
 
@@ -263,8 +281,6 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
         if (currentlyDraggedItem == null)
         {
             Vector2 mousePos = inputReader.RitualPointValue;
-            Debug.LogWarning($"[Дебаг] Клик! Пытаемся ВЗЯТЬ вещь. Координаты мыши: {mousePos}");
-
             Ray ray = cameraHandler.playerCamera.ScreenPointToRay(mousePos);
 
             if (Physics.Raycast(ray, out RaycastHit hit, 5f, clothingLayer))
@@ -275,21 +291,16 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
                     currentlyDraggedItem = item;
                     dragPlaneDistance = Vector3.Dot(cameraHandler.playerCamera.transform.forward, currentlyDraggedItem.transform.position - cameraHandler.playerCamera.transform.position);
                     dragOffset = currentlyDraggedItem.transform.position - ray.GetPoint(dragPlaneDistance);
-                    Debug.LogWarning($"[Дебаг] ВЗЯЛИ: {item.name}. dragPlaneDistance: {dragPlaneDistance}");
+
+                    if (AudioManager.Instance != null && clothesMoveSound != null)
+                    {
+                        AudioManager.Instance.PlaySound3D(clothesMoveSound, currentlyDraggedItem.transform.position);
+                    }
                 }
-                else
-                {
-                    Debug.LogWarning($"[Дебаг] Луч попал в {hit.collider.name}, но скрипт ClothingItem не найден!");
-                }
-            }
-            else
-            {
-                Debug.LogWarning("[Дебаг] Луч мимо одежды.");
             }
         }
         else
         {
-            Debug.LogWarning($"[Дебаг] Пытаемся ПОЛОЖИТЬ: {currentlyDraggedItem.name}");
             float closestDistance = float.MaxValue;
             int closestHangerIndex = -1;
 
@@ -325,6 +336,11 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
                     currentlyDraggedItem.currentHangerIndex = closestHangerIndex;
                     _currentSwapsMade++;
 
+                    if (AudioManager.Instance != null && clothesMoveSound != null)
+                    {
+                        AudioManager.Instance.PlaySound3D(clothesMoveSound, currentlyDraggedItem.transform.position);
+                    }
+
                     int currentThreshold = _minimumRequiredSwaps + GetCurrentTier().extraSwaps;
 
                     if (_currentSwapsMade > currentThreshold)
@@ -352,7 +368,6 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
     {
         if (currentlyDraggedItem != null)
         {
-            Debug.LogWarning($"[Дебаг] Экстренный сброс вещи: {currentlyDraggedItem.name}. Возвращаем на вешалку {currentlyDraggedItem.currentHangerIndex}");
             if (currentlyDraggedItem.currentHangerIndex != -1 && currentlyDraggedItem.currentHangerIndex < hangers.Length)
             {
                 currentlyDraggedItem.transform.position = hangers[currentlyDraggedItem.currentHangerIndex].position;
@@ -369,23 +384,36 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
         foreach (var item in clothes)
         {
             int requiredHanger = SessionProgress.correctClosetOrder.IndexOf(item.clothingID);
-
-            if (item.currentHangerIndex != requiredHanger)
-            {
-                return;
-            }
+            if (item.currentHangerIndex != requiredHanger) return;
         }
 
-        if (GameLoopManager.Instance != null) GameLoopManager.Instance.RegisterRitualComplete();
+        StartCoroutine(CompleteRitualSequence());
+    }
+
+    private IEnumerator CompleteRitualSequence()
+    {
+        _isRitualCompleted = true;
+
+        // Игрок закончил ритуал — сразу отдаем ему управление, чтобы он мог свободно уйти
         EndRitual();
+
+        // Звук закрытия запускается только тут
+        if (AudioManager.Instance != null && doorCloseSound != null)
+        {
+            AudioManager.Instance.PlaySound3D(doorCloseSound, transform.position);
+        }
+
+        // Двери закрываются со скоростью doorCloseDuration
+        yield return StartCoroutine(AnimateDoors(false));
+        areDoorsOpen = false;
+
+        if (GameLoopManager.Instance != null) GameLoopManager.Instance.RegisterRitualComplete();
     }
 
     public void EndRitual()
     {
         if (!_isRitualActive) return;
         _isRitualActive = false;
-
-        Debug.LogWarning("[Дебаг] Вызван EndRitual(). Отключаем ритуал.");
 
         DropCurrentlyDraggedItem();
 
@@ -399,10 +427,16 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
 
         if (ritualActivator != null)
         {
-            ritualActivator.RitualFinished();
-            if (areDoorsOpen)
+            if (_isRitualCompleted)
             {
-                ritualActivator.AdvanceInteractionStage();
+                ritualActivator.gameObject.SetActive(false);
+            }
+            else
+            {
+                // Если ритуал НЕ завершен (игрок просто вышел назад) — 
+                // сбрасываем стадии текста, но двери ОСТАЮТСЯ открытыми.
+                ritualActivator.RitualFinished();
+                if (areDoorsOpen) ritualActivator.AdvanceInteractionStage();
             }
         }
 
@@ -414,16 +448,18 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
 
     private void ForceExitOnDeath()
     {
-        Debug.LogWarning("[Дебаг] Смерть! Вызван ForceExitOnDeath().");
         if (_isRitualActive) EndRitual();
     }
 
     private void ResetRitualGlobal()
     {
-        Debug.LogWarning("[Дебаг] Сброс лупа! ResetRitualGlobal()");
         if (_isRitualActive) EndRitual();
 
+        _isRitualCompleted = false;
         areDoorsOpen = false;
+
+        if (ritualActivator != null) ritualActivator.gameObject.SetActive(true);
+
         if (doorAnimationCoroutine != null) StopCoroutine(doorAnimationCoroutine);
 
         if (doorLeft != null) doorLeft.localRotation = closedRotationLeft;

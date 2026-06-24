@@ -14,6 +14,10 @@ public class PlantWateringRitual : MonoBehaviour, IRitualController
     public GameObject pulverizerObject;
     public ParticleSystem sprayParticles;
 
+    [Header("Мысли (Thought Data)")]
+    public ThoughtData enterRitualThought;
+    public ThoughtData completeRitualThought;
+
     [Header("Настройки полива")]
     public int sprayAngleWidth = 45;
     public float sprayCooldown = 0.5f;
@@ -21,18 +25,49 @@ public class PlantWateringRitual : MonoBehaviour, IRitualController
     public float maxRotationSpeed = 100f;
     public float overwaterAnxietyPenalty = 0.5f;
     public float requiredWateredPercentage = 85f;
-    //public float interruptionPercentage = 50f;
 
-    //public event System.Action OnInterruptionRequested;
+    [Header("Звуки")]
+    public SoundData spraySound;
+    public SoundData ritualCompleteSound;
+    [Space(5)]
+    public SoundData potRotateLoopSound;
+    public float loopStartSeconds = 0.5f;
+    public float loopEndSeconds = 3.5f;
+    public float clipEndSeconds = 4.0f;
 
     private int[] soilDegrees = new int[360];
     private int successfullyWateredAngles = 0;
     private float currentCooldown = 0f;
+
     private bool _isRitualActive = false;
     private bool _isPaused = false;
-    //private bool hasTriggeredInterruption = false;
+    private bool _isRitualCompleted = false;
 
     public bool IsRitualActive => _isRitualActive;
+
+    private AudioSource _potAudioSource;
+    private Coroutine _potLoopCoroutine;
+
+    private void OnEnable()
+    {
+        // ИСПРАВЛЕНИЕ: Для статических эвентов проверка Instance НЕ НУЖНА.
+        // Теперь подписка сработает со 100% гарантией при любом порядке инициализации кадров.
+        GameLoopManager.OnLoopReset += ResetRitualGlobal;
+        GameLoopManager.OnDeathScreamerRequested += ForceExitOnDeath;
+    }
+
+    private void OnDisable()
+    {
+        GameLoopManager.OnLoopReset -= ResetRitualGlobal;
+        GameLoopManager.OnDeathScreamerRequested -= ForceExitOnDeath;
+
+        if (inputReader != null)
+        {
+            inputReader.OnRitualInteractPerformed -= ExitRitualManual;
+        }
+
+        StopPotRotationSound();
+    }
 
     private void Start()
     {
@@ -46,19 +81,17 @@ public class PlantWateringRitual : MonoBehaviour, IRitualController
 
     public void Interact(int stage)
     {
-        if (!_isRitualActive) StartRitual();
+        if (!_isRitualActive && !_isRitualCompleted)
+            StartRitual();
     }
 
     public void StartRitual()
     {
-        if (_isRitualActive) return;
+        if (_isRitualActive || _isRitualCompleted) return;
+
         _isRitualActive = true;
         _isPaused = false;
         currentCooldown = 0f;
-        successfullyWateredAngles = 0;
-
-
-        System.Array.Clear(soilDegrees, 0, soilDegrees.Length);
 
         if (meshGenerator != null)
         {
@@ -69,6 +102,28 @@ public class PlantWateringRitual : MonoBehaviour, IRitualController
         if (ritualActivator != null) ritualActivator.HidePrompt();
         if (pulverizerObject != null) pulverizerObject.SetActive(true);
         if (cameraHandler != null) cameraHandler.EnterRitualMode(ritualCameraTarget);
+
+        if (inputReader != null)
+        {
+            inputReader.OnRitualInteractPerformed += ExitRitualManual;
+            inputReader.SwitchToRitual();
+        }
+
+        if (enterRitualThought != null && SubtitleManager.Instance != null)
+        {
+            SubtitleManager.Instance.ShowThought(enterRitualThought);
+        }
+
+        if (AudioManager.Instance != null && potRotateLoopSound != null)
+        {
+            _potAudioSource = transform.GetComponent<AudioSource>();
+            if (_potAudioSource == null) _potAudioSource = transform.gameObject.AddComponent<AudioSource>();
+
+            _potLoopCoroutine = AudioManager.Instance.StartDynamicLoop(_potAudioSource, potRotateLoopSound, loopStartSeconds, loopEndSeconds);
+        }
+
+        Cursor.visible = false;
+        Cursor.lockState = CursorLockMode.Locked;
     }
 
     private void Update()
@@ -91,7 +146,6 @@ public class PlantWateringRitual : MonoBehaviour, IRitualController
     private void HandleRotation()
     {
         float anxiety = AnxietyManager.Instance != null ? AnxietyManager.Instance.GetTremorIntensity() : 0f;
-
         float currentSpeed = Mathf.Lerp(baseRotationSpeed, maxRotationSpeed, anxiety);
 
         if (anxiety > 0.1f)
@@ -101,13 +155,20 @@ public class PlantWateringRitual : MonoBehaviour, IRitualController
         }
 
         transform.Rotate(Vector3.up, currentSpeed * Time.deltaTime);
+
+        if (_potAudioSource != null && _potAudioSource.isPlaying)
+        {
+            _potAudioSource.pitch = 1f + (anxiety * 0.15f);
+        }
     }
 
     private void SprayWater(int centerAngle)
     {
-        if (sprayParticles != null)
+        if (sprayParticles != null) sprayParticles.Play();
+
+        if (AudioManager.Instance != null && spraySound != null)
         {
-            sprayParticles.Play();
+            AudioManager.Instance.PlaySound3D(spraySound, pulverizerObject != null ? pulverizerObject.transform.position : transform.position);
         }
 
         int halfWidth = sprayAngleWidth / 2;
@@ -121,21 +182,12 @@ public class PlantWateringRitual : MonoBehaviour, IRitualController
             {
                 soilDegrees[angle]++;
 
-                if (soilDegrees[angle] == 2)
-                {
-                    successfullyWateredAngles++;
-                }
-                if (soilDegrees[angle] == 3)
-                {
-                    overwateredDegreesInThisSpray++;
-                }
+                if (soilDegrees[angle] == 2) successfullyWateredAngles++;
+                if (soilDegrees[angle] == 3) overwateredDegreesInThisSpray++;
             }
         }
 
-        if (meshGenerator != null)
-        {
-            meshGenerator.UpdateColors(soilDegrees);
-        }
+        if (meshGenerator != null) meshGenerator.UpdateColors(soilDegrees);
 
         if (overwateredDegreesInThisSpray > 0 && AnxietyManager.Instance != null)
         {
@@ -144,11 +196,105 @@ public class PlantWateringRitual : MonoBehaviour, IRitualController
 
         float currentProgressPercent = ((float)successfullyWateredAngles / 360f) * 100f;
 
-
-
         if (currentProgressPercent >= requiredWateredPercentage)
         {
-            EndRitual();
+            CompleteRitual();
+        }
+    }
+
+    private void CompleteRitual()
+    {
+        _isRitualCompleted = true;
+
+        if (AudioManager.Instance != null && ritualCompleteSound != null)
+        {
+            AudioManager.Instance.PlaySound2D(ritualCompleteSound);
+        }
+
+        if (ritualActivator != null)
+            ritualActivator.enabled = false; // Отключаем только компонент, чтобы объект жил
+
+        if (GameLoopManager.Instance != null)
+            GameLoopManager.Instance.RegisterRitualComplete();
+
+        if (completeRitualThought != null && SubtitleManager.Instance != null)
+        {
+            SubtitleManager.Instance.ShowThought(completeRitualThought);
+        }
+
+        EndRitual();
+    }
+
+    private void ExitRitualManual()
+    {
+        if (_isRitualActive) EndRitual();
+    }
+
+    private void ForceExitOnDeath()
+    {
+        if (_isRitualActive) EndRitual();
+    }
+
+    private void StopPotRotationSound()
+    {
+        if (_potAudioSource != null && AudioManager.Instance != null)
+        {
+            AudioManager.Instance.StopDynamicLoop(_potLoopCoroutine, _potAudioSource, loopEndSeconds, clipEndSeconds);
+            _potLoopCoroutine = null;
+        }
+    }
+
+    public void EndRitual()
+    {
+        if (!_isRitualActive) return;
+        _isRitualActive = false;
+        _isPaused = false;
+
+        if (inputReader != null)
+        {
+            inputReader.OnRitualInteractPerformed -= ExitRitualManual;
+        }
+
+        if (pulverizerObject != null) pulverizerObject.SetActive(false);
+        if (meshGenerator != null) meshGenerator.TogglePreview(false);
+
+        if (cameraHandler != null) cameraHandler.ExitRitualMode();
+
+        StopPotRotationSound();
+
+        if (ritualActivator != null)
+        {
+            if (_isRitualCompleted)
+            {
+                ritualActivator.enabled = false;
+            }
+            else
+            {
+                ritualActivator.RitualFinished();
+            }
+        }
+
+        if (inputReader != null) inputReader.SwitchToGameplay();
+
+        Cursor.visible = false;
+        Cursor.lockState = CursorLockMode.Locked;
+    }
+
+    private void ResetRitualGlobal()
+    {
+        if (_isRitualActive) EndRitual();
+
+        _isRitualCompleted = false;
+        successfullyWateredAngles = 0;
+        System.Array.Clear(soilDegrees, 0, soilDegrees.Length);
+
+        if (ritualActivator != null)
+            ritualActivator.enabled = true; // Оживляем триггер
+
+        if (meshGenerator != null)
+        {
+            meshGenerator.UpdateColors(soilDegrees);
+            meshGenerator.TogglePreview(false); // ИСПРАВЛЕНИЕ: Жестко выключаем маску при рестарте
         }
     }
 
@@ -156,27 +302,18 @@ public class PlantWateringRitual : MonoBehaviour, IRitualController
     {
         _isPaused = true;
         if (meshGenerator != null) meshGenerator.TogglePreview(false);
+        if (_potAudioSource != null && _potAudioSource.isPlaying) _potAudioSource.Pause();
     }
 
     public void ResumeRitual()
     {
         _isPaused = false;
         if (meshGenerator != null) meshGenerator.TogglePreview(true);
+        if (_potAudioSource != null) _potAudioSource.UnPause();
+
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
         if (inputReader != null) inputReader.SwitchToRitual();
-    }
-
-    public void EndRitual()
-    {
-        _isRitualActive = false;
-        _isPaused = false;
-
-        if (pulverizerObject != null) pulverizerObject.SetActive(false);
-        if (meshGenerator != null) meshGenerator.TogglePreview(false);
-
-        if (cameraHandler != null) cameraHandler.ExitRitualMode();
-        if (ritualActivator != null) ritualActivator.RitualFinished();
     }
 
     public void AbortRitual() { EndRitual(); }

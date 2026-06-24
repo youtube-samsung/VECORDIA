@@ -517,12 +517,42 @@ public class CucumberRitualController : MonoBehaviour, IRitualController
 
     private void ResetRitualGlobal()
     {
-        if (_isRitualActive) EndRitual();
+        // Силентный сброс без вызова EndRitual(), чтобы не ломать логику камеры смерти
+        if (_isRitualActive)
+        {
+            _isRitualActive = false;
 
+            if (inputReader != null)
+            {
+                inputReader.OnRitualClickPerformed -= OnRitualClick;
+                inputReader.OnRitualInteractPerformed -= EndRitual;
+            }
+
+            StopAllCoroutines(); // Гасим корутины анимации самого ножа
+
+            if (cameraHandler != null)
+            {
+                // ХИТРЫЙ ХАК: Вызываем выход, чтобы сбросить флаг isHandlingCamera в false для новой петли...
+                cameraHandler.ExitRitualMode();
+                // ...и ТУТ ЖЕ аппаратно тушим корутину полета камеры назад к столу, пока она не сделала ни одного кадра!
+                cameraHandler.StopAllCoroutines();
+            }
+        }
+
+        // Стандартный сброс переменных и объектов ритуала огурца
         currentStageIndex = 0;
         _isRitualCompleted = false;
 
-        if (ritualActivator != null) ritualActivator.gameObject.SetActive(true);
+        if (knifeObject != null)
+            knifeObject.transform.localPosition = initialKnifeLocalPos;
+
+        if (cutLightMarker != null)
+            cutLightMarker.gameObject.SetActive(false);
+
+        ToggleRitualObjects(false);
+
+        if (ritualActivator != null)
+            ritualActivator.gameObject.SetActive(true);
 
         foreach (var mem in sliceMemories)
         {

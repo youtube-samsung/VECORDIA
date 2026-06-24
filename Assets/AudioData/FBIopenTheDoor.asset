@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b9640129e40d71446b7a2b15e806fff1, type: 3}
+  m_Name: FBIopenTheDoor
+  m_EditorClassIdentifier: Assembly-CSharp::SoundData
+  clips:
+  - {fileID: 8300000, guid: edcde203026a08047bc1d9353442785c, type: 3}
+  - {fileID: 8300000, guid: 698346a9caceec9469df014a21114069, type: 3}
+  - {fileID: 8300000, guid: d3c26bb581108da4898e132755242f89, type: 3}
+  - {fileID: 8300000, guid: a09560fe728b54b46af168f38e106314, type: 3}
+  minVolume: 0.27
+  maxVolume: 0.386
+  minPitch: 0.95
+  maxPitch: 1.07
