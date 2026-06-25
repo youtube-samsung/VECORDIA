@@ -8,6 +8,8 @@ public class TVVideoAnomaly : BaseAnomaly
     [SerializeField] private MeshRenderer screenRenderer;
     [Tooltip("Материал, который настроен на прием RenderTexture от видеоплеера")]
     [SerializeField] private Material tvVideoMaterial;
+    [Tooltip("Обычная лампочка (Light), чтобы синхронизировать свет в пространстве")]
+    [SerializeField] private Light targetLight;
 
     [Header("Компоненты Видео")]
     [SerializeField] private VideoPlayer videoPlayer;
@@ -49,6 +51,11 @@ public class TVVideoAnomaly : BaseAnomaly
 
         videoPlayer.clip = scareVideoClip;
         videoPlayer.Play();
+        if (targetLight != null)
+        {
+            targetLight.enabled = true;
+        }
+
 
 
         Debug.Log($"[TVVideoAnomaly] Режиссер врубил видеоролик: {scareVideoClip.name}");
@@ -73,6 +80,10 @@ public class TVVideoAnomaly : BaseAnomaly
         if (tvAudioSource != null)
         {
             tvAudioSource.Stop();
+        }
+        if (targetLight != null)
+        {
+            targetLight.enabled = false;
         }
     }
 }

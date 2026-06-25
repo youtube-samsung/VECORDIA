@@ -8,8 +8,9 @@ public class DeathTransitionController : MonoBehaviour
     public CharacterController playerController;
     public InputReader inputReader;
 
-    [Header("Скример (Заглушка)")]
-    public GameObject placeholderHands;
+    [Header("Скример (Руки с анимацией)")]
+    [Tooltip("Перетащи сюда сам объект рук Low Poly Arm Rig1 из-под камеры")]
+    public GameObject armsObject;
     public SoundData screamerSound;
 
     [Header("Настройки падения")]
@@ -44,6 +45,9 @@ public class DeathTransitionController : MonoBehaviour
             _normalCameraLocalPos = playerCamera.localPosition;
             _normalCameraLocalRot = playerCamera.localRotation;
         }
+
+        // На всякий случай при старте игры принудительно гасим руки, чтобы не маячили
+        if (armsObject != null) armsObject.SetActive(false);
     }
 
     private void StartDeathSequence()
@@ -53,8 +57,7 @@ public class DeathTransitionController : MonoBehaviour
 
     private IEnumerator DeathRoutine()
     {
-        // ИСПРАВЛЕНИЕ БАГА 1: Находим все ритуальные хэндлеры камер на сцене 
-        // и жестко тушим их корутины. Больше они не смогут вернуть управление посреди скримера!
+        // Находим все ритуальные хэндлеры камер на сцене и жестко тушим их корутины
         RitualCameraHandler[] ritualCameras = Object.FindObjectsByType<RitualCameraHandler>(FindObjectsSortMode.None);
         foreach (var cam in ritualCameras)
         {
@@ -65,15 +68,16 @@ public class DeathTransitionController : MonoBehaviour
         if (inputReader != null) inputReader.SwitchToUI();
         if (playerController != null) playerController.enabled = false;
 
-        // Принудительно выключаем скрипт ходьбы через CinematicController на время всей смерти
         if (CinematicController.Instance != null)
             CinematicController.Instance.ToggleControl(false);
 
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
 
-        // Включаем руки-скример и звук испуга
-        if (placeholderHands != null) placeholderHands.SetActive(true);
+        // --- ВКЛЮЧАЕМ РУКИ-СКРИМЕР ---
+        // Как только объект включится, Unity автоматически запустит его дефолтную анимацию
+        if (armsObject != null) armsObject.SetActive(true);
+
         if (screamerSound != null && AudioManager.Instance != null)
             AudioManager.Instance.PlaySound2D(screamerSound);
 
@@ -100,20 +104,18 @@ public class DeathTransitionController : MonoBehaviour
         if (CinematicController.Instance != null)
             yield return StartCoroutine(CinematicController.Instance.FadeRoutine(1f, 0.4f));
 
-        if (placeholderHands != null) placeholderHands.SetActive(false);
+        // --- ВЫКЛЮЧАЕМ РУКИ (пока экран черный) ---
+        if (armsObject != null) armsObject.SetActive(false);
 
         // ТЕЛЕПОРТАЦИЯ К КРОВАТИ
         GameLoopManager.Instance.StartNewLoop();
-
-        // ИСПРАВЛЕНИЕ БАГА 2: Принудительно синхронизируем внутренние матрицы трансформаций Unity.
-        // Это заставляет физический движок мгновенно забыть старые коллизии места смерти.
         Physics.SyncTransforms();
 
         // Пока экран черный — кладем камеру на подушку
         playerCamera.localPosition = _normalCameraLocalPos + new Vector3(0f, bedCameraYOffset, 0f);
         playerCamera.localRotation = Quaternion.Euler(bedCameraXRotation, _normalCameraLocalRot.eulerAngles.y, 10f);
 
-        // Запуск катсцены пробуждения (Персонаж всё еще заблокирован!)
+        // Запуск катсцены пробуждения
         if (wakeUpCutscenes != null && wakeUpCutscenes.Length > 0)
         {
             int index = Random.Range(0, wakeUpCutscenes.Length);
@@ -141,7 +143,6 @@ public class DeathTransitionController : MonoBehaviour
         playerCamera.localPosition = _normalCameraLocalPos;
         playerCamera.localRotation = _normalCameraLocalRot;
 
-        // ТОЛЬКО ТЕПЕРЬ, когда всё полностью закончилось, возвращаем свободу перемещения
         if (CinematicController.Instance != null)
             CinematicController.Instance.ToggleControl(true);
 

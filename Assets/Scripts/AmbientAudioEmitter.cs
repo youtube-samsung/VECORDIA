@@ -36,7 +36,7 @@ public class AmbientAudioEmitter : MonoBehaviour
 
     private void Start()
     {
-        if (loopSoundData == null || AudioManager.Instance != null) return;
+        if (loopSoundData == null || AudioManager.Instance == null) return;
 
 
         if (emitterMode == EmitterMode.ContinuousLoop)

@@ -46,6 +46,9 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
     public SoundData doorCloseSound;
     public SoundData clothesMoveSound;
 
+    [Header("Мысли (Thought Data)")]
+    public ThoughtData completeRitualThought;
+
     private bool _isRitualActive = false;
     private bool _isRitualCompleted = false;
     public bool IsRitualActive => _isRitualActive;
@@ -393,6 +396,10 @@ public class ClosetRitualController : MonoBehaviour, IRitualController
     private IEnumerator CompleteRitualSequence()
     {
         _isRitualCompleted = true;
+        if (completeRitualThought != null && SubtitleManager.Instance != null)
+        {
+            SubtitleManager.Instance.ShowThought(completeRitualThought);
+        }
 
         // Игрок закончил ритуал — сразу отдаем ему управление, чтобы он мог свободно уйти
         EndRitual();

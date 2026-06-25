@@ -48,6 +48,10 @@ public class DishwashingZoneRitual : MonoBehaviour, IRitualController
     [Tooltip("Сколько прогресса отмывания стирается в секунду, если зажать ЛКМ и терить МИМО зеленого круга. 0 — не пачкается обратно.")]
     public float dirtyRegressRate = 0.4f;
 
+    [Header("Мысли (Thought Data)")]
+    public ThoughtData enterRitualThought;
+    public ThoughtData completeRitualThought;
+
     [Header("Звуковое сопровождение: Губка")]
     public SoundData spongeWashLoopSound;   // Звук мытья (по чистому стеклу, внутри зоны)
     public SoundData spongeScrapeLoopSound; // Скрежет (вилкой по посуде, вне зоны)
@@ -158,7 +162,10 @@ public class DishwashingZoneRitual : MonoBehaviour, IRitualController
             inputReader.SwitchToRitual();
         }
 
-        // ЗАПУСК ЗВУКА КРАНА (Динамическая петля)
+        if (enterRitualThought != null && SubtitleManager.Instance != null)
+        {
+            SubtitleManager.Instance.ShowThought(enterRitualThought);
+        }
         if (AudioManager.Instance != null && waterTapLoopSound != null)
         {
             _waterTapSource = transform.GetComponent<AudioSource>();
@@ -382,6 +389,10 @@ public class DishwashingZoneRitual : MonoBehaviour, IRitualController
         if (AudioManager.Instance != null && cleanCompleteSound != null)
         {
             AudioManager.Instance.PlaySound2D(cleanCompleteSound);
+        }
+        if (completeRitualThought != null && SubtitleManager.Instance != null)
+        {
+            SubtitleManager.Instance.ShowThought(completeRitualThought);
         }
 
         if (ritualActivator != null)

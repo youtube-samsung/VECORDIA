@@ -45,6 +45,10 @@ public class CucumberRitualController : MonoBehaviour, IRitualController
     public SoundData sliceSound;
     public SoundData knifeMissSound;
 
+    [Header("Мысли (Thought Data)")]
+    public ThoughtData enterRitualThought;
+    public ThoughtData completeRitualThought;
+
     [Header("Настройки Нарезки")]
     public float sliceForce = 1f;
     public float cuttingTolerance = 0.01f;
@@ -168,6 +172,11 @@ public class CucumberRitualController : MonoBehaviour, IRitualController
         ToggleRitualObjects(true);
 
         if (cameraHandler != null) cameraHandler.EnterRitualMode(ritualCameraTarget);
+
+        if (enterRitualThought != null && SubtitleManager.Instance != null)
+        {
+            SubtitleManager.Instance.ShowThought(enterRitualThought);
+        }
 
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
@@ -469,6 +478,11 @@ public class CucumberRitualController : MonoBehaviour, IRitualController
 
         _isRitualCompleted = true;
         if (ritualActivator != null) ritualActivator.gameObject.SetActive(false);
+
+        if (completeRitualThought != null && SubtitleManager.Instance != null)
+        {
+            SubtitleManager.Instance.ShowThought(completeRitualThought);
+        }
 
         if (GameLoopManager.Instance != null) GameLoopManager.Instance.RegisterRitualComplete();
         EndRitual();

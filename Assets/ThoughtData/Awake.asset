@@ -20,4 +20,4 @@ MonoBehaviour:
   fontSize: 36
   useTypewriterEffect: 1
   typewriterSpeed: 0.05
-  thoughtSound: {fileID: 11400000, guid: 67232c70f7fa4e04fa8546470dc6e56e, type: 2}
+  thoughtSound: {fileID: 0}

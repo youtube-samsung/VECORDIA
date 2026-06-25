@@ -37,6 +37,13 @@ public class SubtitleManager : MonoBehaviour
         if (canvasGroup != null) canvasGroup.alpha = 0f;
         if (subtitleText != null) subtitleText.text = "";
     }
+    private void Start()
+    {
+        if (AnxietyManager.Instance != null)
+        {
+            AnxietyManager.Instance.OnThoughtTriggered += ShowThought;
+        }
+    }
 
     public void ShowThought(ThoughtData data)
     {
@@ -95,5 +102,13 @@ public class SubtitleManager : MonoBehaviour
         canvasGroup.alpha = 0f;
         subtitleText.text = "";
         currentRoutine = null;
+    }
+    private void OnDestroy()
+    {
+
+        if (AnxietyManager.Instance != null)
+        {
+            AnxietyManager.Instance.OnThoughtTriggered -= ShowThought;
+        }
     }
 }

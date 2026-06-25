@@ -10,10 +10,17 @@ public class AnxietyManager : MonoBehaviour
     public float maxAnxiety = 100f;
     public TextMeshProUGUI anxietyDebugText;
 
-    public event Action OnMentalBreakdown;
-    public event Action<int> OnAnxietyThresholdReached;
+    [Header("Мысли по десяткам (1=10%, 2=20% ... 9=90%)")]
+    [Tooltip("Перетаскивай сюда свои Scriptable Objects (ThoughtData) в нужные индексы.")]
+    public ThoughtData[] decadeThoughts = new ThoughtData[10];
 
-    // ТВОЕ НОВОЕ НАЗВАНИЕ
+    // События
+    public event Action OnMentalBreakdown;
+    public event Action<int> OnAnxietyThresholdReached; // Для старых эффектов экрана
+
+    // Твой новый ивент, который теперь прокидывает сам Scriptable Object дальше
+    public event Action<ThoughtData> OnThoughtTriggered;
+
     public float CurrentTotalAnxiety { get; private set; }
 
     private int _lastThreshold = 0;
@@ -33,7 +40,6 @@ public class AnxietyManager : MonoBehaviour
         UpdateUI();
     }
 
-    // ТВОЕ НОВОЕ НАЗВАНИЕ (Сюда прилетают штрафы от ритуалов)
     public void AddPenalty(float amount)
     {
         if (_isDead) return;
@@ -55,7 +61,6 @@ public class AnxietyManager : MonoBehaviour
     {
         if (_isDead || TimeManager.Instance == null) return;
 
-        // Равномерный рост: 100% делится на время петли
         float anxietyPerSecond = maxAnxiety / TimeManager.Instance.totalLoopDuration;
 
         CurrentTotalAnxiety += anxietyPerSecond * Time.deltaTime;
@@ -74,10 +79,26 @@ public class AnxietyManager : MonoBehaviour
     private void CheckThresholds()
     {
         int currentDecade = Mathf.FloorToInt(CurrentTotalAnxiety / 10f) * 10;
+
         if (currentDecade > _lastThreshold && currentDecade < 100)
         {
             _lastThreshold = currentDecade;
+
             OnAnxietyThresholdReached?.Invoke(_lastThreshold);
+
+
+            int index = currentDecade / 10;
+
+            if (decadeThoughts != null && index < decadeThoughts.Length)
+            {
+                ThoughtData activeThought = decadeThoughts[index];
+
+
+                if (activeThought != null)
+                {
+                    OnThoughtTriggered?.Invoke(activeThought);
+                }
+            }
         }
     }
 

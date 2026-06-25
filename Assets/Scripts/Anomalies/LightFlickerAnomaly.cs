@@ -1,78 +1,97 @@
 using UnityEngine;
-using System.Collections;
 
+// Наследуемся от твоего базового класса аномалий
 public class LightFlickerAnomaly : BaseAnomaly
 {
-    [Header("Компоненты Света")]
+    [Header("Компоненты")]
+    [SerializeField] private Renderer lampRenderer;
     [SerializeField] private Light targetLight;
 
-    [Header("Настройки Аудио")]
-    [SerializeField] private SoundData electricFlickerSound;
+    [Header("Настройки цвета (HDR)")]
+    [ColorUsage(true, true)]
+    [SerializeField] private Color emissionColor = Color.white;
 
-    [Header("Настройки Мигания")]
-    [SerializeField] private float minFlickerStep = 0.03f;
-    [SerializeField] private float maxFlickerStep = 0.2f;
+    [Header("Настройки яркости")]
+    [SerializeField] private float maxIntensity = 3f;
+    [SerializeField] private float minIntensity = 0f;
 
-    private float _originalIntensity;
-    private bool _originalEnabled;
-    private AudioSource _spawnedAudioSource;
-    private Coroutine _flickerCoroutine;
+    [Header("Настройки таймингов")]
+    [SerializeField] private float flickerSpeed = 0.1f;
+
+    private Material _lampMaterial;
+    private float _nextFlickerTime;
+    private bool _isOn = true;
+    private bool _isAnomalyActive = false; // Флаг: активен ли сбой прямо сейчас
 
     private void Start()
     {
-        if (targetLight != null)
+        if (lampRenderer == null) lampRenderer = GetComponent<Renderer>();
+
+        if (lampRenderer != null)
         {
-            _originalIntensity = targetLight.intensity;
-            _originalEnabled = targetLight.enabled;
+            _lampMaterial = lampRenderer.material;
+            _lampMaterial.EnableKeyword("_EMISSION");
         }
+
+        // Изначально принудительно сбрасываем в нормальное состояние
+        ResetAnomaly();
     }
 
-    public override void TriggerAnomaly()
+    private void Update()
     {
-        base.TriggerAnomaly();
-        _flickerCoroutine = StartCoroutine(FlickerRoutine());
+        // Если аномалия НЕ активна — код мигания просто не выполняется!
+        if (!_isAnomalyActive) return;
 
-        if (AudioManager.Instance != null && electricFlickerSound != null)
+        if (Time.time >= _nextFlickerTime)
         {
-            _spawnedAudioSource = AudioManager.Instance.PlayLoopingSound3D(electricFlickerSound, transform.position, 0.5f, 6f, 1f);
-        }
-    }
+            _isOn = !_isOn;
+            float currentIntensity = _isOn ? maxIntensity : minIntensity;
 
-    private IEnumerator FlickerRoutine()
-    {
-        while (IsActive)
-        {
-            bool isLightOn = Random.Range(0f, 1f) > 0.4f;
+            if (_lampMaterial != null)
+            {
+                Color finalEmissionColor = emissionColor * currentIntensity;
+                _lampMaterial.SetColor("_EmissionColor", finalEmissionColor);
+            }
 
             if (targetLight != null)
             {
-                targetLight.enabled = isLightOn;
-                targetLight.intensity = isLightOn ? Random.Range(_originalIntensity * 0.6f, _originalIntensity) : 0f;
+                targetLight.intensity = currentIntensity;
+                targetLight.enabled = _isOn;
             }
 
-            yield return new WaitForSeconds(Random.Range(minFlickerStep, maxFlickerStep));
+            _nextFlickerTime = Time.time + Random.Range(flickerSpeed * 0.3f, flickerSpeed * 1.5f);
         }
     }
 
+    // ВЫПОЛНЕНИЕ АБСТРАКТНОГО КЛАССА: Включаем мигание
+    public override void TriggerAnomaly()
+    {
+        base.TriggerAnomaly(); // Если в родителе есть базовая логика
+        _isAnomalyActive = true;
+        _nextFlickerTime = Time.time; // Начинаем моргать мгновенно
+    }
+
+    // ВЫПОЛНЕНИЕ АБСТРАКТНОГО КЛАССА: Возвращаем свет в норму
     public override void ResetAnomaly()
     {
-        base.ResetAnomaly();
+        base.ResetAnomaly(); // Если в родителе есть базовая логика
+        _isAnomalyActive = false;
 
-        if (_flickerCoroutine != null)
-        {
-            StopCoroutine(_flickerCoroutine);
-        }
-
+        // Возвращаем лампочке стабильный дефолтный свет
         if (targetLight != null)
         {
-            targetLight.enabled = _originalEnabled;
-            targetLight.intensity = _originalIntensity;
+            targetLight.enabled = true;
+            targetLight.intensity = maxIntensity;
         }
 
-        if (AudioManager.Instance != null && _spawnedAudioSource != null)
+        if (_lampMaterial != null)
         {
-            AudioManager.Instance.StopLoopingSound(_spawnedAudioSource);
-            _spawnedAudioSource = null;
+            _lampMaterial.SetColor("_EmissionColor", emissionColor * maxIntensity);
         }
+    }
+
+    private void OnDestroy()
+    {
+        if (_lampMaterial != null) Destroy(_lampMaterial);
     }
 }
